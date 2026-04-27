@@ -682,6 +682,8 @@ function GoalSelectionScreen({ player = null, onSelect }) {
 }
 
 // ── App root ───────────────────────────────────────────────────────────────
+const SESSION_MEMORY_DEPTH = 4
+
 const NICKNAMES = [
   'The Great Bambino',
   'The Sultan of Swat',
@@ -725,6 +727,17 @@ export default function App() {
     lastName: NICKNAMES[Math.floor(Math.random() * NICKNAMES.length)],
   }), [])
 
+  const [sessionHistory, setSessionHistory] = useState([])
+  const [viewingSession, setViewingSession] = useState(null)
+
+  const computeStats = (swings) => {
+    const total = swings.length
+    const avgExitVelocity = Math.round(swings.reduce((s, w) => s + w.hit.launch.exitSpeed, 0) / total)
+    const avgLaunchAngle = Math.round(swings.reduce((s, w) => s + w.hit.launch.angle, 0) / total)
+    const inZoneCount = swings.filter((w) => w.hit.launch.angle >= 25 && w.hit.launch.angle <= 35).length
+    return { avgExitVelocity, avgLaunchAngle, inZoneCount, totalSwings: total }
+  }
+
   const generateSwings = (prevSwings) => {
     const prevEV = prevSwings.reduce((s, w) => s + w.hit.launch.exitSpeed, 0) / prevSwings.length
     const prevLA = prevSwings.reduce((s, w) => s + w.hit.launch.angle, 0) / prevSwings.length
@@ -743,7 +756,19 @@ export default function App() {
     setSessionNumber(1)
     setSessions([1])
     setActiveSwings(mockSwings)
+    setSessionHistory([])
+    setViewingSession(null)
     setScreen('goal')
+  }
+
+  const handleEndSession = () => {
+    const stats = computeStats(activeSwings)
+    setSessionHistory((prev) => [
+      ...prev,
+      { sessionNumber, swings: activeSwings, stats, messages: [] },
+    ])
+    setViewingSession(sessionNumber)
+    setScreen('debrief')
   }
 
   if (screen === 'goal') {
@@ -826,7 +851,7 @@ export default function App() {
             dist: s.hit.landing.distance,
           }))}
           sessionComplete={true}
-          onEndSession={() => setScreen('debrief')}
+          onEndSession={handleEndSession}
           onHome={handleHome}
         />
       </div>
@@ -834,28 +859,37 @@ export default function App() {
   }
 
   if (screen === 'debrief') {
-    const total = activeSwings.length
-    const avgEV = Math.round(activeSwings.reduce((s, w) => s + w.hit.launch.exitSpeed, 0) / total)
-    const avgLA = Math.round(activeSwings.reduce((s, w) => s + w.hit.launch.angle, 0) / total)
-    const inZone = activeSwings.filter((w) => w.hit.launch.angle >= 25 && w.hit.launch.angle <= 35).length
+    const viewed = sessionHistory.find((s) => s.sessionNumber === viewingSession) ?? sessionHistory.at(-1)
 
     return (
       <div style={{ width: '100vw', height: '100vh' }}>
         <DebriefScreen
           player={player}
-          sessionNumber={sessionNumber}
+          sessionNumber={viewed?.sessionNumber ?? sessionNumber}
           goalId={selectedGoal?.id}
           goalLabel={selectedGoal?.label}
-          sessionData={{ avgExitVelocity: avgEV, avgLaunchAngle: avgLA, inZoneCount: inZone, totalSwings: total }}
+          sessionData={viewed?.stats ?? null}
           coachingSummary={null}
           whatThisMeans={null}
           nextSessionTips={[]}
           charts={[]}
           sessions={sessions}
-          onSessionToggle={() => {}}
+          onSessionToggle={(num) => setViewingSession(num)}
           onExpandChat={() => setScreen('conversation')}
           onHome={handleHome}
+          chatMessages={viewed?.messages ?? []}
+          onChatUpdate={(newMessages) =>
+            setSessionHistory((prev) =>
+              prev.map((s) =>
+                s.sessionNumber === viewed?.sessionNumber
+                  ? { ...s, messages: newMessages }
+                  : s
+              )
+            )
+          }
+          sessionCapReached={sessionHistory.length >= SESSION_MEMORY_DEPTH}
           onNewSession={() => {
+            if (sessionHistory.length >= SESSION_MEMORY_DEPTH) return
             const newSwings = generateSwings(activeSwings)
             const newNum = sessionNumber + 1
             setActiveSwings(newSwings)

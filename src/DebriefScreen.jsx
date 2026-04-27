@@ -232,8 +232,7 @@ function ChartPlaceholder({ chart }) {
 }
 
 // ── Virtual Coach chat panel ───────────────────────────────────────────────
-function ChatPanel({ onExpandChat, delay }) {
-  const [messages, setMessages] = useState([])
+function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
@@ -246,8 +245,7 @@ function ChatPanel({ onExpandChat, delay }) {
     if (!text.trim() || loading) return
     const msg = text.trim()
     setText('')
-    setMessages((prev) => [...prev, { role: 'user', content: msg }])
-    // Anthropic API call will go here
+    onMessagesChange?.([...messages, { role: 'user', content: msg }])
     setLoading(true)
     setTimeout(() => {
       setLoading(false)
@@ -418,6 +416,9 @@ export default function DebriefScreen({
   onExpandChat,
   onHome = null,
   onNewSession = null,
+  chatMessages = [],
+  onChatUpdate = null,
+  sessionCapReached = false,
 }) {
   const [time, setTime] = useState('')
   const [revealed, setRevealed] = useState(false)
@@ -546,7 +547,15 @@ export default function DebriefScreen({
           </div>
         )}
 
-        {onNewSession && (
+        {sessionCapReached ? (
+          <div style={{
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: 700, fontSize: 13, letterSpacing: '0.06em',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
+          }}>
+            Session limit reached
+          </div>
+        ) : onNewSession ? (
           <button
             onClick={onNewSession}
             style={{
@@ -576,7 +585,7 @@ export default function DebriefScreen({
             </svg>
             New Session
           </button>
-        )}
+        ) : null}
 
         <div style={{ flex: 1 }} />
 
@@ -730,7 +739,7 @@ export default function DebriefScreen({
         <div style={{ display: 'flex', gap: GAP, flex: 1, minHeight: 0 }}>
 
           {/* Virtual Coach chat */}
-          <ChatPanel onExpandChat={onExpandChat} delay={0.32} />
+          <ChatPanel messages={chatMessages} onMessagesChange={onChatUpdate} onExpandChat={onExpandChat} delay={0.32} />
 
           {/* Chart slots */}
           {chartSlots.map((chart, i) => {
