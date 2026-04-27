@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B1 Coach — Live Session S2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; background:#080809; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #root { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+
+  @keyframes livePulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,107,26,0.7), 0 0 0 0 rgba(255,107,26,0.3); }
+    50%  { box-shadow: 0 0 0 10px rgba(255,107,26,0.0), 0 0 0 22px rgba(255,107,26,0.0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,107,26,0.0), 0 0 0 0 rgba(255,107,26,0.0); }
+  }
+  @keyframes dotBreathe {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%     { opacity: 0.75; transform: scale(0.88); }
+  }
+  @keyframes ringExpand {
+    0%   { transform: scale(1); opacity: 0.55; }
+    100% { transform: scale(2.8); opacity: 0; }
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  @keyframes countUp {
+    from { opacity:0; transform:translateY(24px) scale(0.95); }
+    to   { opacity:1; transform:translateY(0) scale(1); }
+  }
+  @keyframes scanLine {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+  @keyframes shimmerBtn {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const ORANGE = '#FF6B1A';
+const SCREEN_W = 1024, SCREEN_H = 768, BEZEL = 16;
+const SHELL_W  = SCREEN_W + BEZEL*2;
+const SHELL_H  = SCREEN_H + BEZEL*2 + 44;
+
+// ── Recent swing feed data ─────────────────────────────────────────────────
+const RECENT_SWINGS = [
+  { ev: 92, la: 28, dist: 318, inZone: true  },
+  { ev: 91, la: 30, dist: 335, inZone: true  },
+  { ev: 94, la: 32, dist: 352, inZone: true  },
+  { ev: 90, la: 27, dist: 312, inZone: true  },
+  { ev: 88, la: 18, dist: 261, inZone: false },
+  { ev: 93, la: 29, dist: 341, inZone: true  },
+  { ev: 91, la: 25, dist: 308, inZone: true  },
+  { ev: 89, la: 14, dist: 248, inZone: false },
+  { ev: 92, la: 33, dist: 344, inZone: true  },
+  { ev: 94, la: 31, dist: 355, inZone: true  },
+  { ev: 90, la: 22, dist: 281, inZone: false },
+];
+
+// ── TM Logo ────────────────────────────────────────────────────────────────
+function TMLogo() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+        <path d="M16 28C22.627 28 28 22.627 28 16S22.627 4 16 4" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" opacity="0.35"/>
+        <path d="M16 23C19.866 23 23 19.866 23 16S19.866 9 16 9" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" opacity="0.6"/>
+        <path d="M16 18C17.105 18 18 17.105 18 16S17.105 14 16 14" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round"/>
+        <circle cx="16" cy="16" r="2" fill={ORANGE}/>
+        <line x1="4" y1="28" x2="16" y2="16" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
+      </svg>
+      <div style={{lineHeight:1}}>
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:9,letterSpacing:'0.25em',color:'rgba(255,255,255,0.4)',textTransform:'uppercase'}}>Powered by</div>
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,letterSpacing:'0.06em',color:'rgba(255,255,255,0.85)',textTransform:'uppercase'}}>TrackMan</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Radar decor ────────────────────────────────────────────────────────────
+function RadarDecor() {
+  return (
+    <svg style={{position:'absolute',top:-120,right:-120,opacity:0.03,pointerEvents:'none'}} width="480" height="480" viewBox="0 0 480 480" fill="none">
+      {[1,2,3,4,5,6].map(i=><circle key={i} cx="420" cy="60" r={i*65} stroke="white" strokeWidth="1"/>)}
+      <line x1="420" y1="60" x2="420" y2="460" stroke="white" strokeWidth="1"/>
+      <line x1="420" y1="60" x2="20" y2="460" stroke="white" strokeWidth="1"/>
+      <line x1="420" y1="60" x2="220" y2="480" stroke="white" strokeWidth="1"/>
+    </svg>
+  );
+}
+
+// ── Live indicator ─────────────────────────────────────────────────────────
+function LiveIndicator() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center'}}>
+      {/* Animated dot with expanding rings */}
+      <div style={{position:'relative',width:20,height:20,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        {/* Ring 1 */}
+        <div style={{
+          position:'absolute', width:20, height:20, borderRadius:'50%',
+          border:`1.5px solid ${ORANGE}`,
+          animation:'ringExpand 1.8s ease-out infinite',
+        }}/>
+        {/* Ring 2 */}
+        <div style={{
+          position:'absolute', width:20, height:20, borderRadius:'50%',
+          border:`1.5px solid ${ORANGE}`,
+          animation:'ringExpand 1.8s ease-out 0.6s infinite',
+        }}/>
+        {/* Core dot */}
+        <div style={{
+          width:12, height:12, borderRadius:'50%',
+          background:ORANGE,
+          animation:'dotBreathe 1.8s ease-in-out infinite',
+          boxShadow:`0 0 12px ${ORANGE}`,
+          position:'relative', zIndex:2,
+        }}/>
+      </div>
+      <div style={{
+        fontFamily:"'Barlow Condensed',sans-serif",
+        fontWeight:900, fontSize:22, letterSpacing:'0.18em',
+        color:ORANGE, textTransform:'uppercase',
+      }}>Live</div>
+    </div>
+  );
+}
+
+// ── Swing count display ────────────────────────────────────────────────────
+function SwingCount({ count }) {
+  return (
+    <div style={{textAlign:'center',animation:'countUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both'}}>
+      <div style={{
+        fontFamily:"'Barlow Condensed',sans-serif",
+        fontWeight:900, fontSize:120, lineHeight:0.9,
+        letterSpacing:'-0.02em', color:'#ffffff',
+        textShadow:`0 0 80px rgba(255,255,255,0.08)`,
+      }}>{count}</div>
+      <div style={{
+        fontFamily:"'Barlow Condensed',sans-serif",
+        fontWeight:700, fontSize:28, letterSpacing:'0.2em',
+        color:'rgba(255,255,255,0.45)', textTransform:'uppercase',
+        marginTop:4,
+      }}>Swings Tracked</div>
+    </div>
+  );
+}
+
+// ── Recent swing ticker ────────────────────────────────────────────────────
+function SwingTicker({ swings }) {
+  return (
+    <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'nowrap'}}>
+      {swings.map((s,i)=>(
+        <div key={i} style={{
+          display:'flex',flexDirection:'column',alignItems:'center',
+          padding:'7px 12px', borderRadius:10,
+          background: s.inZone ? `${ORANGE}18` : 'rgba(255,255,255,0.04)',
+          border:`1px solid ${s.inZone ? ORANGE+'45' : 'rgba(255,255,255,0.07)'}`,
+          animation:`fadeUp 0.4s ease ${0.05 + i*0.04}s both`,
+          minWidth:64,
+        }}>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,lineHeight:1,color:s.inZone?ORANGE:'rgba(255,255,255,0.6)'}}>{s.ev}</div>
+          <div style={{fontFamily:"'Barlow',sans-serif",fontSize:9.5,color:'rgba(255,255,255,0.3)',marginTop:2,letterSpacing:'0.04em'}}>mph</div>
+          <div style={{width:'100%',height:1,background:'rgba(255,255,255,0.08)',margin:'5px 0'}}/>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,lineHeight:1,color:s.inZone?'rgba(255,200,100,0.9)':'rgba(255,255,255,0.4)'}}>{s.la}°</div>
+          <div style={{fontFamily:"'Barlow',sans-serif",fontSize:9,color:'rgba(255,255,255,0.25)',marginTop:1}}>LA</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── iPad shell ─────────────────────────────────────────────────────────────
+function IPadShell({ children }) {
+  return (
+    <div style={{width:SHELL_W,height:SHELL_H,background:'#1B1B1D',borderRadius:36,
+      boxShadow:'0 40px 100px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.09)',
+      position:'relative',display:'flex',flexDirection:'column',alignItems:'center',padding:`${BEZEL}px ${BEZEL}px 0`}}>
+      <div style={{position:'absolute',top:BEZEL+12,right:80,width:8,height:8,borderRadius:'50%',background:'#252527',zIndex:10}}/>
+      <div style={{position:'absolute',right:-3,top:'38%',width:4,height:36,borderRadius:3,background:'#242426'}}/>
+      <div style={{position:'absolute',left:-3,top:'30%',width:4,height:28,borderRadius:3,background:'#242426'}}/>
+      <div style={{position:'absolute',left:-3,top:'44%',width:4,height:28,borderRadius:3,background:'#242426'}}/>
+      <div style={{width:SCREEN_W,height:SCREEN_H,borderRadius:24,overflow:'hidden',background:'#000',position:'relative'}}>{children}</div>
+      <div style={{height:44,width:'100%',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <div style={{width:100,height:4,borderRadius:100,background:'rgba(255,255,255,0.18)'}}/>
+      </div>
+    </div>
+  );
+}
+
+// ── App ────────────────────────────────────────────────────────────────────
+function App() {
+  const [shellScale, setShellScale] = useState(1);
+  const [swingCount, setSwingCount] = useState(11);
+
+  useEffect(()=>{
+    const calc=()=>setShellScale(Math.min(window.innerWidth/(SHELL_W+40),window.innerHeight/(SHELL_H+40),1));
+    calc(); window.addEventListener('resize',calc);
+    return ()=>window.removeEventListener('resize',calc);
+  },[]);
+
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:'100vw',height:'100vh',background:'#080809'}}>
+      <div style={{position:'relative',width:SHELL_W*shellScale,height:SHELL_H*shellScale,flexShrink:0}}>
+        <div style={{position:'absolute',top:0,left:0,width:SHELL_W,height:SHELL_H,transform:`scale(${shellScale})`,transformOrigin:'top left'}}>
+          <IPadShell>
+            <div style={{
+              width:'100%', height:'100%',
+              background:'linear-gradient(170deg, #111214 0%, #0C0D0F 50%, #0D0C10 100%)',
+              display:'flex', flexDirection:'column',
+              position:'relative', overflow:'hidden',
+            }}>
+              <RadarDecor/>
+
+              {/* Subtle scan line */}
+              <div style={{
+                position:'absolute', left:0, right:0, height:1,
+                background:'linear-gradient(90deg, transparent, rgba(255,107,26,0.06), transparent)',
+                animation:'scanLine 6s linear infinite',
+                pointerEvents:'none', zIndex:0,
+              }}/>
+
+              {/* Status bar */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 24px 5px',fontFamily:"'Barlow',sans-serif",fontSize:12,color:'rgba(255,255,255,0.38)',flexShrink:0,position:'relative',zIndex:1}}>
+                <span>9:41 AM</span>
+                <div style={{display:'flex',gap:7,alignItems:'center'}}>
+                  <svg width="16" height="11" viewBox="0 0 17 12" fill="none">{[0,1,2,3].map(i=><rect key={i} x={i*4} y={12-(4+i*2.5)} width="3" height={4+i*2.5} rx="0.7" fill="rgba(255,255,255,0.5)"/>)}</svg>
+                  <svg width="15" height="11" viewBox="0 0 16 12" fill="none"><rect x="0.5" y="0.5" width="13" height="11" rx="2" stroke="rgba(255,255,255,0.32)"/><rect x="2" y="2" width="10" height="8" rx="1" fill="rgba(255,255,255,0.5)"/></svg>
+                </div>
+              </div>
+
+              {/* Header */}
+              <div style={{display:'flex',alignItems:'center',padding:'3px 24px 9px',gap:14,flexShrink:0,position:'relative',zIndex:1}}>
+                <TMLogo/>
+                <div style={{width:1,height:30,background:'rgba(255,255,255,0.1)',flexShrink:0}}/>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{width:34,height:34,borderRadius:'50%',flexShrink:0,background:`${ORANGE}20`,border:`1.5px solid ${ORANGE}50`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:12,color:ORANGE}}>BF</div>
+                  <div>
+                    <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:15,color:'rgba(255,255,255,0.9)',lineHeight:1}}>Bill the Great Bambino</div>
+                    <div style={{fontFamily:"'Barlow',sans-serif",fontSize:10,color:'rgba(255,255,255,0.35)',marginTop:1}}>Session 2</div>
+                  </div>
+                </div>
+                <div style={{flex:1}}/>
+                <div style={{display:'flex',alignItems:'center',gap:7,padding:'5px 11px',borderRadius:9,background:`${ORANGE}15`,border:`1px solid ${ORANGE}35`}}>
+                  <svg width="12" height="12" viewBox="0 0 48 48" fill="none"><path d="M24 6L28 18H40L30 26L34 38L24 30L14 38L18 26L8 18H20L24 6Z" stroke={ORANGE} strokeWidth="3" fill={ORANGE} fillOpacity="0.2"/></svg>
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,color:ORANGE,letterSpacing:'0.04em',textTransform:'uppercase'}}>Power & Home Runs</span>
+                </div>
+              </div>
+              <div style={{height:1,background:'rgba(255,255,255,0.07)',flexShrink:0,position:'relative',zIndex:1}}/>
+
+              {/* ── Main content ── */}
+              <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:0,position:'relative',zIndex:1,padding:'0 48px'}}>
+
+                {/* Live indicator */}
+                <div style={{animation:'fadeUp 0.5s ease 0.05s both',marginBottom:40}}>
+                  <LiveIndicator/>
+                </div>
+
+                {/* Swing count — the hero */}
+                <div style={{marginBottom:32}}>
+                  <SwingCount count={swingCount}/>
+                </div>
+
+                {/* Tagline */}
+                <div style={{
+                  fontFamily:"'Barlow',sans-serif", fontSize:16, lineHeight:1.6,
+                  color:'rgba(255,255,255,0.32)', textAlign:'center',
+                  letterSpacing:'0.01em', maxWidth:520,
+                  animation:'fadeUp 0.5s ease 0.35s both',
+                  marginBottom:48,
+                }}>
+                  TrackMan B1 is capturing every swing.<br/>
+                  Your coach will be ready when you are.
+                </div>
+
+                {/* Recent swings ticker */}
+                <div style={{width:'100%',animation:'fadeUp 0.5s ease 0.45s both',marginBottom:52}}>
+                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'rgba(255,255,255,0.22)',textAlign:'center',marginBottom:12}}>Recent swings</div>
+                  <SwingTicker swings={RECENT_SWINGS}/>
+                </div>
+
+                {/* CTA — inactive */}
+                <div style={{animation:'fadeUp 0.5s ease 0.55s both',width:'100%',maxWidth:400}}>
+                  <button disabled style={{
+                    width:'100%', height:60, borderRadius:18,
+                    border:'1.5px solid rgba(255,255,255,0.08)',
+                    background:'rgba(255,255,255,0.04)',
+                    color:'rgba(255,255,255,0.2)',
+                    fontFamily:"'Barlow Condensed',sans-serif",
+                    fontWeight:800, fontSize:20, letterSpacing:'0.1em',
+                    textTransform:'uppercase', cursor:'default',
+                    display:'flex',alignItems:'center',justifyContent:'center',gap:10,
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="2" width="12" height="12" rx="2" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>
+                      <path d="M5 8h6M8 5v6" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    View Session Summary
+                  </button>
+                  <div style={{textAlign:'center',marginTop:8,fontFamily:"'Barlow',sans-serif",fontSize:11,color:'rgba(255,255,255,0.15)',letterSpacing:'0.02em'}}>
+                    Available when session ends
+                  </div>
+                </div>
+              </div>
+            </div>
+          </IPadShell>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

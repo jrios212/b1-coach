@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B1 Coach — AI Conversation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; background:#080809; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #root { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes barGrow { from{transform:scaleY(0)} to{transform:scaleY(1)} }
+  @keyframes dotPop  { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes blink   { 0%,100%{opacity:.35} 50%{opacity:1} }
+  input::placeholder { color:rgba(255,255,255,0.25); }
+  .chat-scroll::-webkit-scrollbar { width:3px; }
+  .chat-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.14); border-radius:3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useEffect, useRef } = React;
+
+const ORANGE = '#FF6B1A';
+const SCREEN_W = 1024,SCREEN_H = 768,BEZEL = 16;
+const SHELL_W = SCREEN_W + BEZEL * 2;
+const SHELL_H = SCREEN_H + BEZEL * 2 + 44;
+
+// ── Session data ───────────────────────────────────────────────────────────
+const SWINGS = [
+{ ev: 91, la: 28, dist: 312 }, { ev: 91, la: 22, dist: 285 }, { ev: 95, la: 30, dist: 341 },
+{ ev: 90, la: 12, dist: 244 }, { ev: 92, la: 26, dist: 318 }, { ev: 88, la: 8, dist: 198 },
+{ ev: 89, la: 33, dist: 298 }, { ev: 88, la: 18, dist: 262 }, { ev: 91, la: 15, dist: 271 },
+{ ev: 90, la: 24, dist: 287 }, { ev: 94, la: 29, dist: 335 }, { ev: 88, la: 6, dist: 188 },
+{ ev: 90, la: 20, dist: 278 }, { ev: 95, la: 35, dist: 290 }, { ev: 93, la: 27, dist: 328 }];
+
+const inZone = (s) => s.la >= 25 && s.la <= 35;
+const avgEV = Math.round(SWINGS.reduce((a, s) => a + s.ev, 0) / SWINGS.length);
+const avgLA = Math.round(SWINGS.reduce((a, s) => a + s.la, 0) / SWINGS.length);
+const zoneCount = SWINGS.filter(inZone).length;
+const DIST_BUCKETS = [
+{ label: '160–220', min: 160, max: 220 }, { label: '220–260', min: 220, max: 260 },
+{ label: '260–300', min: 260, max: 300 }, { label: '300–340', min: 300, max: 340 },
+{ label: '340+', min: 340, max: 999 }];
+
+const distCounts = DIST_BUCKETS.map((b) => SWINGS.filter((s) => s.dist >= b.min && s.dist < b.max).length);
+const maxDistCount = Math.max(...distCounts);
+
+// ── Contact point data ─────────────────────────────────────────────────────
+const CONTACTS = [
+{ x: 0.72, y: 0.12 }, { x: 0.78, y: -0.08 }, { x: 0.81, y: 0.18 }, { x: 0.68, y: -0.15 },
+{ x: 0.76, y: 0.05 }, { x: 0.83, y: -0.22 }, { x: 0.70, y: 0.28 }, { x: 0.85, y: 0.10 },
+{ x: 0.79, y: -0.30 }, { x: 0.74, y: 0.20 }, { x: 0.88, y: -0.05 }, { x: 0.66, y: -0.18 },
+{ x: 0.80, y: 0.32 }, { x: 0.90, y: 0.08 }, { x: 0.77, y: -0.25 },
+{ x: 0.50, y: 0.05 }, { x: 0.54, y: -0.10 }, { x: 0.48, y: 0.15 }];
+
+
+// ── Seed conversation ──────────────────────────────────────────────────────
+const SEED_MESSAGES = [
+{ role: 'user', content: 'Why were my best hits all in that 88–92 mph range?' },
+{ role: 'assistant', content: "That's your sweet spot right now. Those are the swings where your timing and contact point lined up perfectly. The goal is to make that your floor, not your ceiling." },
+{ role: 'user', content: 'Which of my swings should I focus on replicating?' },
+{ role: 'assistant', content: "Look at swings 3, 5, 11, and 15 — those were your four in-zone hits above 91 mph. What they have in common: your front side stayed closed longer, you got through the ball with more hip turn, and your bat path came through at an upward angle. Those swings felt different, right? More effortless." },
+{ role: 'user', content: "Yeah, those felt way more solid. Why aren't all my swings like that?" },
+{ role: 'assistant', content: "Check out the contact point map on the right — I just surfaced it. Most of your swings are catching the ball toward the end of the barrel. Moving that cluster two inches toward the sweet spot would add 4–6 mph of exit velocity without changing anything else about your swing." }];
+
+
+// ── Panel shell ────────────────────────────────────────────────────────────
+function Panel({ label, labelColor = 'rgba(255,255,255,0.5)', badge, children, style = {}, animate, delay = 0 }) {
+  return (
+    <div style={{
+      background: 'linear-gradient(145deg,rgba(34,36,44,0.97) 0%,rgba(24,26,33,0.98) 100%)',
+      border: `1.5px solid ${badge ? ORANGE + '55' : 'rgba(255,255,255,0.11)'}`,
+      borderRadius: 14,
+      boxShadow: badge ?
+      `0 0 0 1px ${ORANGE}22, 0 2px 14px rgba(0,0,0,0.45)` :
+      '0 2px 10px rgba(0,0,0,0.45)',
+      animation: animate ? `fadeUp 0.42s ease ${delay}s both` : 'none',
+      position: 'relative', overflow: 'hidden',
+      ...style
+    }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: badge ? ORANGE : labelColor, opacity: badge ? 0.9 : 0.6, borderRadius: '0 3px 3px 0' }} />
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '10px 12px 10px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8, flexShrink: 0 }}>
+          <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: badge ? ORANGE : labelColor, fontSize: "14px" }}>{label}</div>
+          {badge &&
+          <span style={{
+            fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 9,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            padding: '2px 7px', borderRadius: 100,
+            background: `${ORANGE}22`, border: `1px solid ${ORANGE}55`,
+            color: ORANGE
+          }}>New insight</span>
+          }
+        </div>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{children}</div>
+      </div>
+    </div>);
+
+}
+
+// ── Contact Point Map ──────────────────────────────────────────────────────
+function ContactMap({ w = 320, h = 100, animate }) {
+  const bL = 36,bR = w - 20,bY = h * 0.40,bThick = 26;
+  const bLen = bR - bL;
+  const ssX1 = bL + bLen * 0.43,ssX2 = bL + bLen * 0.60;
+  return (
+    <svg width={w} height={h} style={{ overflow: 'visible', display: 'block' }}>
+      <rect x={bL - 18} y={bY - 8} width={22} height={16} rx="3"
+      fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <rect x={bL} y={bY - bThick / 2} width={bLen} height={bThick} rx="6"
+      fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+      <rect x={ssX1} y={bY - bThick / 2} width={ssX2 - ssX1} height={bThick} rx="3" fill={`${ORANGE}22`} />
+      <line x1={ssX1} y1={bY - bThick / 2 - 2} x2={ssX1} y2={bY + bThick / 2 + 2}
+      stroke={ORANGE} strokeWidth="1" strokeDasharray="3 2" opacity="0.55" />
+      <line x1={ssX2} y1={bY - bThick / 2 - 2} x2={ssX2} y2={bY + bThick / 2 + 2}
+      stroke={ORANGE} strokeWidth="1" strokeDasharray="3 2" opacity="0.55" />
+      <text x={(ssX1 + ssX2) / 2} y={bY - bThick / 2 - 6} fontFamily="'Barlow Condensed',sans-serif"
+      fontSize="10" fontWeight="600" fill={ORANGE} opacity="0.8" textAnchor="middle" letterSpacing="0.04em">SWEET SPOT</text>
+      {CONTACTS.map((c, i) => {
+        const cx = bL + c.x * bLen,cy = bY + c.y * (bThick * 0.5);
+        const inSS = c.x >= 0.43 && c.x <= 0.60;
+        return <circle key={i} cx={cx} cy={cy} r={3.5}
+        fill={inSS ? ORANGE : 'rgba(255,255,255,0.32)'}
+        stroke={inSS ? `${ORANGE}70` : 'rgba(255,255,255,0.1)'} strokeWidth="1"
+        style={animate ? { animation: `dotPop 0.35s cubic-bezier(0.34,1.56,0.64,1) ${0.5 + i * 0.04}s both`, transformOrigin: `${cx}px ${cy}px` } : {}} />;
+      })}
+      <text x={bL - 18} y={bY + bThick / 2 + 16} fontFamily="'Barlow',sans-serif" fontSize="10"
+      fill="rgba(255,255,255,0.4)" textAnchor="middle">Handle</text>
+      <text x={bR} y={bY + bThick / 2 + 16} fontFamily="'Barlow',sans-serif" fontSize="10"
+      fill="rgba(255,255,255,0.4)" textAnchor="end">Tip</text>
+      {/* legend */}
+      <circle cx={bL + 4} cy={bY + bThick / 2 + 30} r="4" fill={ORANGE} />
+      <text x={bL + 12} y={bY + bThick / 2 + 34} fontFamily="'Barlow',sans-serif" fontSize="10" fill="rgba(255,255,255,0.5)">Sweet spot (in zone)</text>
+      <circle cx={w/2 + 20} cy={bY + bThick / 2 + 30} r="4" fill="rgba(255,255,255,0.32)" />
+      <text x={w/2 + 30} y={bY + bThick / 2 + 34} fontFamily="'Barlow',sans-serif" fontSize="10" fill="rgba(255,255,255,0.5)">Off barrel end</text>
+    </svg>);
+
+}
+
+// ── Scatter Plot ───────────────────────────────────────────────────────────
+function ScatterPlot({ animate, w = 300, h = 170 }) {
+  const PAD = { t: 16, r: 10, b: 38, l: 42 };
+  const pw = w - PAD.l - PAD.r,ph = h - PAD.t - PAD.b;
+  const EV_MIN = 74,EV_MAX = 100,LA_MIN = -5,LA_MAX = 42;
+  const mx = (ev) => PAD.l + (ev - EV_MIN) / (EV_MAX - EV_MIN) * pw;
+  const my = (la) => PAD.t + (LA_MAX - la) / (LA_MAX - LA_MIN) * ph;
+  const zY1 = my(35),zY2 = my(25);
+  return (
+    <svg width={w} height={h} style={{ overflow: 'visible' }}>
+      <rect x={PAD.l} y={zY1} width={pw} height={zY2 - zY1} fill={`${ORANGE}12`} />
+      <line x1={PAD.l} y1={zY1} x2={PAD.l + pw} y2={zY1} stroke={ORANGE} strokeWidth="1" strokeDasharray="4 3" opacity="0.45" />
+      <line x1={PAD.l} y1={zY2} x2={PAD.l + pw} y2={zY2} stroke={ORANGE} strokeWidth="1" strokeDasharray="4 3" opacity="0.45" />
+      <text x={PAD.l + pw - 2} y={zY1 - 5} fontFamily="'Barlow Condensed',sans-serif" fontSize="10" fontWeight="600" fill={ORANGE} opacity="0.8" textAnchor="end" letterSpacing="0.04em">POWER ZONE 25–35°</text>
+      {[75, 80, 85, 90, 95, 100].map((ev) =>
+      <g key={ev}>
+          <line x1={mx(ev)} y1={PAD.t} x2={mx(ev)} y2={PAD.t + ph} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          <text x={mx(ev)} y={PAD.t + ph + 14} fontFamily="'Barlow',sans-serif" fontSize="10" fill="rgba(255,255,255,0.38)" textAnchor="middle">{ev}</text>
+        </g>
+      )}
+      {[0, 10, 20, 30, 40].map((la) =>
+      <g key={la}>
+          <line x1={PAD.l} y1={my(la)} x2={PAD.l + pw} y2={my(la)} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          <text x={PAD.l - 6} y={my(la) + 3.5} fontFamily="'Barlow',sans-serif" fontSize="10" fill="rgba(255,255,255,0.38)" textAnchor="end">{la}°</text>
+        </g>
+      )}
+      <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + ph} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={PAD.l} y1={PAD.t + ph} x2={PAD.l + pw} y2={PAD.t + ph} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <text x={PAD.l + pw / 2} y={h} fontFamily="'Barlow Condensed',sans-serif" fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.45)" textAnchor="middle" letterSpacing="0.05em">EXIT VELOCITY (MPH)</text>
+      <text x={10} y={PAD.t + ph / 2} fontFamily="'Barlow Condensed',sans-serif" fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.45)" textAnchor="middle" letterSpacing="0.05em" transform={`rotate(-90,10,${PAD.t + ph / 2})`}>LAUNCH ANG.</text>
+      {SWINGS.map((s, i) => {
+        const iz = inZone(s);
+        return <circle key={i} cx={mx(s.ev)} cy={my(s.la)} r={iz ? 4.5 : 3}
+        fill={iz ? ORANGE : 'rgba(255,255,255,0.2)'} stroke={iz ? `${ORANGE}55` : 'rgba(255,255,255,0.08)'} strokeWidth="1.5"
+        style={animate ? { animation: `dotPop 0.4s cubic-bezier(0.34,1.56,0.64,1) ${0.3 + i * 0.05}s both`, transformOrigin: `${mx(s.ev)}px ${my(s.la)}px` } : {}} />;
+      })}
+      <line x1={mx(avgEV)} y1={PAD.t} x2={mx(avgEV)} y2={PAD.t + ph} stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="3 3" />
+      <text x={mx(avgEV) + 4} y={PAD.t + 10} fontFamily="'Barlow',sans-serif" fontSize="10" fill="rgba(255,255,255,0.45)">avg {avgEV}</text>
+    </svg>);
+
+}
+
+// ── Distance Bar Chart ─────────────────────────────────────────────────────
+function DistChart({ animate, w = 300, h = 150 }) {
+  const PAD = { t: 12, r: 8, b: 38, l: 32 };
+  const pw = w - PAD.l - PAD.r,ph = h - PAD.t - PAD.b;
+  const BAR_GAP = 5,barW = (pw - BAR_GAP * (distCounts.length - 1)) / distCounts.length;
+  return (
+    <svg width={w} height={h} style={{ overflow: 'visible' }}>
+      {[1, 2, 3, 4, 5].map((v) => {
+        const y = PAD.t + ph - v / maxDistCount * ph;
+        return <g key={v}>
+          <line x1={PAD.l} y1={y} x2={PAD.l + pw} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          <text x={PAD.l - 5} y={y + 3.5} fontFamily="'Barlow',sans-serif" fontSize="10" fill="rgba(255,255,255,0.38)" textAnchor="end">{v}</text>
+        </g>;
+      })}
+      <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + ph} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={PAD.l} y1={PAD.t + ph} x2={PAD.l + pw} y2={PAD.t + ph} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      {distCounts.map((count, i) => {
+        const x = PAD.l + i * (barW + BAR_GAP);
+        const bh = Math.max(count / maxDistCount * ph, 0),y = PAD.t + ph - bh;
+        const best = count === maxDistCount;
+        return <g key={i}>
+          <rect x={x} y={PAD.t} width={barW} height={ph} fill="rgba(255,255,255,0.03)" rx="3" />
+          {count > 0 && <rect x={x} y={y} width={barW} height={bh} fill={best ? ORANGE : `${ORANGE}55`} rx="3"
+          style={animate ? { transformOrigin: `${x + barW / 2}px ${PAD.t + ph}px`, animation: `barGrow 0.55s cubic-bezier(0.22,1,0.36,1) ${0.4 + i * 0.07}s both` } : {}} />}
+          {count > 0 && <text x={x + barW / 2} y={y - 5} fontFamily="'Barlow Condensed',sans-serif" fontSize="11" fontWeight="700" fill={best ? ORANGE : 'rgba(255,255,255,0.5)'} textAnchor="middle">{count}</text>}
+          <text x={x + barW / 2} y={PAD.t + ph + 14} fontFamily="'Barlow',sans-serif" fontSize="9.5" fill="rgba(255,255,255,0.42)" textAnchor="middle">{DIST_BUCKETS[i].label}</text>
+        </g>;
+      })}
+      <text x={PAD.l + pw / 2} y={h} fontFamily="'Barlow Condensed',sans-serif" fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.45)" textAnchor="middle" letterSpacing="0.05em">DISTANCE (FT)</text>
+      <text x={10} y={PAD.t + ph / 2} fontFamily="'Barlow Condensed',sans-serif" fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.45)" textAnchor="middle" letterSpacing="0.05em" transform={`rotate(-90,10,${PAD.t + ph / 2})`}>SWINGS</text>
+    </svg>);
+
+}
+
+// ── TM Logo ────────────────────────────────────────────────────────────────
+function TMLogo() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+        <path d="M16 28C22.627 28 28 22.627 28 16S22.627 4 16 4" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" opacity="0.35" />
+        <path d="M16 23C19.866 23 23 19.866 23 16S19.866 9 16 9" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+        <path d="M16 18C17.105 18 18 17.105 18 16S17.105 14 16 14" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="16" cy="16" r="2" fill={ORANGE} />
+        <line x1="4" y1="28" x2="16" y2="16" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+      </svg>
+      <div style={{ lineHeight: 1 }}>
+        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 9, letterSpacing: '0.25em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Powered by</div>
+        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 15, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase' }}>TrackMan</div>
+      </div>
+    </div>);
+
+}
+
+// ── Radar decor ────────────────────────────────────────────────────────────
+function RadarDecor() {
+  return (
+    <svg style={{ position: 'absolute', top: -80, right: -80, opacity: 0.025, pointerEvents: 'none' }} width="340" height="340" viewBox="0 0 340 340" fill="none">
+      {[1, 2, 3, 4, 5].map((i) => <circle key={i} cx="300" cy="40" r={i * 55} stroke="white" strokeWidth="1" />)}
+      <line x1="300" y1="40" x2="300" y2="300" stroke="white" strokeWidth="1" />
+      <line x1="300" y1="40" x2="40" y2="300" stroke="white" strokeWidth="1" />
+    </svg>);
+
+}
+
+// ── iPad shell ─────────────────────────────────────────────────────────────
+function IPadShell({ children }) {
+  return (
+    <div style={{ width: SHELL_W, height: SHELL_H, background: '#1B1B1D', borderRadius: 36,
+      boxShadow: '0 40px 100px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.09)',
+      position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: `${BEZEL}px ${BEZEL}px 0` }}>
+      <div style={{ position: 'absolute', top: BEZEL + 12, right: 80, width: 8, height: 8, borderRadius: '50%', background: '#252527', zIndex: 10 }} />
+      <div style={{ position: 'absolute', right: -3, top: '38%', width: 4, height: 36, borderRadius: 3, background: '#242426' }} />
+      <div style={{ position: 'absolute', left: -3, top: '30%', width: 4, height: 28, borderRadius: 3, background: '#242426' }} />
+      <div style={{ position: 'absolute', left: -3, top: '44%', width: 4, height: 28, borderRadius: 3, background: '#242426' }} />
+      <div style={{ width: SCREEN_W, height: SCREEN_H, borderRadius: 24, overflow: 'hidden', background: '#000', position: 'relative' }}>{children}</div>
+      <div style={{ height: 44, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 100, height: 4, borderRadius: 100, background: 'rgba(255,255,255,0.18)' }} />
+      </div>
+    </div>);
+
+}
+
+// ── App ────────────────────────────────────────────────────────────────────
+function App() {
+  const [animate, setAnimate] = useState(false);
+  const [shellScale, setShellScale] = useState(1);
+  const [messages, setMessages] = useState(SEED_MESSAGES);
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {setTimeout(() => setAnimate(true), 100);}, []);
+  useEffect(() => {
+    const calc = () => setShellScale(Math.min(window.innerWidth / (SHELL_W + 40), window.innerHeight / (SHELL_H + 40), 1));
+    calc();window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
+  useEffect(() => {bottomRef.current?.scrollIntoView({ behavior: 'smooth' });}, [messages, loading]);
+
+  const send = async () => {
+    if (!text.trim() || loading) return;
+    const msg = text.trim();setText('');
+    setMessages((p) => [...p, { role: 'user', content: msg }]);
+    setLoading(true);
+    try {
+      const ctx = `You are B1 Coach, a warm encouraging baseball analytics AI. Player: Bill (16yo), goal: Power & Home Runs. Avg EV ${avgEV}mph, Avg LA ${avgLA}°, ${zoneCount}/${SWINGS.length} in power zone. Reply in 2-3 sentences, warm and direct. No markdown.`;
+      const hist = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
+      const reply = await window.claude.complete({ messages: [...hist, { role: 'user', content: ctx + '\n\n' + msg }] });
+      setMessages((p) => [...p, { role: 'assistant', content: reply }]);
+    } catch {setMessages((p) => [...p, { role: 'assistant', content: 'Connection issue — try again.' }]);}
+    setLoading(false);
+  };
+
+  // Layout
+  const PAD = 12,GAP = 10;
+  const availW = SCREEN_W - PAD * 2;
+  const chatW = Math.floor(availW * 0.50); // 50%
+  const rightW = availW - chatW - GAP; // remaining 50%
+  const statH = 48;
+  const availH = SCREEN_H - 83 - PAD * 2 - statH - GAP; // approx body height after header
+  const chartH = Math.floor((availH - GAP * 2) / 3);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', background: '#080809' }}>
+      <div style={{ position: 'relative', width: SHELL_W * shellScale, height: SHELL_H * shellScale, flexShrink: 0 }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: SHELL_W, height: SHELL_H, transform: `scale(${shellScale})`, transformOrigin: 'top left' }}>
+          <IPadShell>
+            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(155deg,#141518 0%,#0C0D0F 55%,#0E0D12 100%)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+              <RadarDecor />
+
+              {/* Status bar */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px 5px', fontFamily: "'Barlow',sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.38)', flexShrink: 0 }}>
+                <span>9:41 AM</span>
+                <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
+                  <svg width="16" height="11" viewBox="0 0 17 12" fill="none">{[0, 1, 2, 3].map((i) => <rect key={i} x={i * 4} y={12 - (4 + i * 2.5)} width="3" height={4 + i * 2.5} rx="0.7" fill="rgba(255,255,255,0.5)" />)}</svg>
+                  <svg width="15" height="11" viewBox="0 0 16 12" fill="none"><rect x="0.5" y="0.5" width="13" height="11" rx="2" stroke="rgba(255,255,255,0.32)" /><rect x="2" y="2" width="10" height="8" rx="1" fill="rgba(255,255,255,0.5)" /></svg>
+                </div>
+              </div>
+
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '3px 24px 9px', gap: 14, flexShrink: 0, animation: animate ? 'fadeUp 0.4s ease both' : 'none' }}>
+                <TMLogo />
+                <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, background: `${ORANGE}20`, border: `1.5px solid ${ORANGE}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 12, color: ORANGE }}>BF</div>
+                  <div>
+                    <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1, fontSize: "1px" }}>Bill the Great Bambino</div>
+                    <div style={{ fontFamily: "'Barlow',sans-serif", fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>Session 1 debrief · Follow-up</div>
+                  </div>
+                </div>
+                <div style={{ flex: 1 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 11px', borderRadius: 9, background: `${ORANGE}15`, border: `1px solid ${ORANGE}35` }}>
+                  <svg width="12" height="12" viewBox="0 0 48 48" fill="none"><path d="M24 6L28 18H40L30 26L34 38L24 30L14 38L18 26L8 18H20L24 6Z" stroke={ORANGE} strokeWidth="3" fill={ORANGE} fillOpacity="0.2" /></svg>
+                  <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 12, color: ORANGE, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Power & Home Runs</span>
+                </div>
+              </div>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
+
+              {/* ── Body ── */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: `${PAD}px`, gap: GAP, minHeight: 0 }}>
+
+                {/* Main row */}
+                <div style={{ flex: 1, display: 'flex', gap: GAP, minHeight: 0 }}>
+
+                  {/* LEFT: wide chat panel */}
+                  <div style={{ width: chatW, flexShrink: 0, display: 'flex', flexDirection: 'column',
+                    background: 'linear-gradient(145deg,rgba(34,36,44,0.97) 0%,rgba(24,26,33,0.98) 100%)',
+                    border: '1.5px solid rgba(255,255,255,0.11)',
+                    borderRadius: 14,
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
+                    animation: animate ? 'fadeUp 0.42s ease 0.08s both' : 'none',
+                    position: 'relative', overflow: 'hidden'
+                  }}>
+                    {/* accent bar */}
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: ORANGE, opacity: 0.65, borderRadius: '0 3px 3px 0' }} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '10px 14px 10px 18px', minHeight: 0 }}>
+                      {/* Label */}
+                      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: ORANGE, marginBottom: 10, flexShrink: 0 }}>Virtual Coach</div>
+                      {/* Messages */}
+                      <div className="chat-scroll" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, paddingRight: 4 }}>
+                        {messages.map((m, i) =>
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.04em', color: m.role === 'user' ? 'rgba(255,255,255,0.3)' : ORANGE, paddingLeft: 2, paddingRight: 2, whiteSpace: 'nowrap' }}>{m.role === 'user' ? 'You' : 'Coach'}</div>
+                            <div style={{
+                            maxWidth: '88%',
+                            padding: '9px 13px',
+                            borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                            background: m.role === 'user' ? 'rgba(255,255,255,0.07)' : `${ORANGE}12`,
+                            border: m.role === 'user' ? '1px solid rgba(255,255,255,0.09)' : `1px solid ${ORANGE}28`,
+                            fontFamily: "'Barlow',sans-serif", fontSize: 13.5, lineHeight: 1.6,
+                            color: m.role === 'user' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.92)'
+                          }}>{m.content}</div>
+                          </div>
+                        )}
+                        {loading &&
+                        <div style={{ display: 'flex', gap: 4, padding: '4px 2px', alignItems: 'center' }}>
+                            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 10, color: ORANGE, marginRight: 4 }}>Coach</div>
+                            {[0, 1, 2].map((i) => <div key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: ORANGE, animation: `blink 1.2s ease ${i * 0.18}s infinite` }} />)}
+                          </div>
+                        }
+                        <div ref={bottomRef} />
+                      </div>
+                      {/* Input */}
+                      <div style={{ flexShrink: 0, marginTop: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(14,15,20,0.95)', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 11, padding: '0 8px 0 12px', height: 40 }}>
+                          <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()}
+                          placeholder="Continue the conversation..."
+                          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontFamily: "'Barlow',sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.85)' }} />
+                          <button onClick={send} disabled={!text.trim() || loading}
+                          style={{ width: 28, height: 28, borderRadius: 8, border: 'none', cursor: text.trim() ? 'pointer' : 'default', background: text.trim() ? ORANGE : 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.18s', flexShrink: 0 }}>
+                            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M7 1.5l4 3.5-4 3.5" stroke={text.trim() ? 'white' : 'rgba(255,255,255,0.25)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RIGHT: 3 stacked charts */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP, minHeight: 0 }}>
+
+                    {/* Contact map — NEW INSIGHT */}
+                    <Panel label="Contact Point Map" labelColor={ORANGE} badge animate={animate} delay={0.14} style={{ flex: 1 }}>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+                        <ContactMap animate={animate} w={rightW - 32} h={chartH - 36} />
+                      </div>
+                    </Panel>
+
+                    {/* Scatter */}
+                    <Panel label="Launch Angle vs Exit Velocity" animate={animate} delay={0.2} style={{ flex: 1 }}>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+                        <ScatterPlot animate={animate} w={rightW - 32} h={chartH - 36} />
+                      </div>
+                    </Panel>
+
+                    {/* Distance */}
+                    <Panel label="Distance Distribution" animate={animate} delay={0.26} style={{ flex: 1 }}>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+                        <DistChart animate={animate} w={rightW - 32} h={chartH - 36} />
+                      </div>
+                    </Panel>
+                  </div>
+                </div>
+
+                {/* Stat bar */}
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0, height: statH, animation: animate ? 'fadeUp 0.42s ease 0.32s both' : 'none' }}>
+                  {[
+                  { label: 'Avg EV', value: `${avgEV} mph`, hi: true },
+                  { label: 'Avg LA', value: `${avgLA}°`, hi: false },
+                  { label: 'In Zone', value: `${zoneCount}/15`, hi: false },
+                  { label: 'Session', value: 'S1', hi: false }].
+                  map((s) =>
+                  <div key={s.label} style={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 10,
+                    background: s.hi ? `${ORANGE}18` : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${s.hi ? ORANGE + '40' : 'rgba(255,255,255,0.07)'}`
+                  }}>
+                      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 18, lineHeight: 1, color: s.hi ? ORANGE : 'rgba(255,255,255,0.85)' }}>{s.value}</div>
+                      <div style={{ fontFamily: "'Barlow',sans-serif", fontSize: 9.5, color: 'rgba(255,255,255,0.35)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </IPadShell>
+        </div>
+      </div>
+    </div>);
+
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

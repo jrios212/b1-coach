@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B1 Coach — Session Debrief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; background:#080809; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #root { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes barGrow { from{transform:scaleY(0)} to{transform:scaleY(1)} }
+  @keyframes dotPop  { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes blink   { 0%,100%{opacity:.35} 50%{opacity:1} }
+  input::placeholder { color:rgba(255,255,255,0.25); }
+  .chat-scroll::-webkit-scrollbar { width:3px; }
+  .chat-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.14); border-radius:3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+
+const { useState, useEffect, useRef } = React;
+
+const ORANGE = '#FF6B1A';
+const SCREEN_W = 1024,SCREEN_H = 768,BEZEL = 16;
+const SHELL_W = SCREEN_W + BEZEL * 2;
+const SHELL_H = SCREEN_H + BEZEL * 2 + 44;
+
+// ── Session data (avg EV = 91) ─────────────────────────────────────────────
+const SWINGS = [
+{ ev: 91, la: 28, dist: 312 }, { ev: 91, la: 22, dist: 285 }, { ev: 95, la: 30, dist: 341 },
+{ ev: 90, la: 12, dist: 244 }, { ev: 92, la: 26, dist: 318 }, { ev: 88, la: 8, dist: 198 },
+{ ev: 89, la: 33, dist: 298 }, { ev: 88, la: 18, dist: 262 }, { ev: 91, la: 15, dist: 271 },
+{ ev: 90, la: 24, dist: 287 }, { ev: 94, la: 29, dist: 335 }, { ev: 88, la: 6, dist: 188 },
+{ ev: 90, la: 20, dist: 278 }, { ev: 95, la: 35, dist: 290 }, { ev: 93, la: 27, dist: 328 }];
+
+const inZone = (s) => s.la >= 25 && s.la <= 35;
+const avgEV = Math.round(SWINGS.reduce((a, s) => a + s.ev, 0) / SWINGS.length);
+const avgLA = Math.round(SWINGS.reduce((a, s) => a + s.la, 0) / SWINGS.length);
+const zoneCount = SWINGS.filter(inZone).length;
+const bestDist = Math.max(...SWINGS.map((s) => s.dist));
+
+const DIST_BUCKETS = [
+{ label: '160–220', min: 160, max: 220 }, { label: '220–260', min: 220, max: 260 },
+{ label: '260–300', min: 260, max: 300 }, { label: '300–340', min: 300, max: 340 },
+{ label: '340+', min: 340, max: 999 }];
+
+const distCounts = DIST_BUCKETS.map((b) => SWINGS.filter((s) => s.dist >= b.min && s.dist < b.max).length);
+const maxDistCount = Math.max(...distCounts);
+
+const TIPS = [
+'Stay back longer before rotating your hips — hold your load until your front foot plants.',
+'Practice tee work at thigh height to train a more upward swing path through the zone.',
+'Aim to get 10 of 15 swings above 25° — track your launch angle on every rep.'];
+
+
+const FAKE_CHAT = [
+{ role: 'user', content: 'Why were my best hits all in that 88–92 mph range?' },
+{ role: 'assistant', content: "That's your sweet spot right now. Those are the swings where your timing and contact point lined up. The goal is making that your floor, not your ceiling." }];
+
+
+// ── TrackMan logo ──────────────────────────────────────────────────────────
+function TMLogo() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+        <path d="M16 28C22.627 28 28 22.627 28 16S22.627 4 16 4" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" opacity="0.35" />
+        <path d="M16 23C19.866 23 23 19.866 23 16S19.866 9 16 9" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+        <path d="M16 18C17.105 18 18 17.105 18 16S17.105 14 16 14" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="16" cy="16" r="2" fill={ORANGE} />
+        <line x1="4" y1="28" x2="16" y2="16" stroke={ORANGE} strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+      </svg>
+      <div style={{ lineHeight: 1 }}>
+        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 9, letterSpacing: '0.25em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Powered by</div>
+        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 15, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase' }}>TrackMan</div>
+      </div>
+    </div>);
+
+}
+
+// ── Scatter Plot ───────────────────────────────────────────────────────────
+function ScatterPlot({ animate, w = 320, h = 200 }) {
+  const PAD = { t: 14, r: 10, b: 34, l: 38 };
+  const pw = w - PAD.l - PAD.r,ph = h - PAD.t - PAD.b;
+  const EV_MIN = 74,EV_MAX = 100,LA_MIN = -5,LA_MAX = 42;
+  const mx = (ev) => PAD.l + (ev - EV_MIN) / (EV_MAX - EV_MIN) * pw;
+  const my = (la) => PAD.t + (LA_MAX - la) / (LA_MAX - LA_MIN) * ph;
+  const zY1 = my(35),zY2 = my(25);
+  return (
+    <svg width={w} height={h} style={{ overflow: 'visible' }}>
+      <rect x={PAD.l} y={zY1} width={pw} height={zY2 - zY1} fill={`${ORANGE}12`} />
+      <line x1={PAD.l} y1={zY1} x2={PAD.l + pw} y2={zY1} stroke={ORANGE} strokeWidth="1" strokeDasharray="4 3" opacity="0.45" />
+      <line x1={PAD.l} y1={zY2} x2={PAD.l + pw} y2={zY2} stroke={ORANGE} strokeWidth="1" strokeDasharray="4 3" opacity="0.45" />
+      <text x={PAD.l + pw - 2} y={zY1 - 4} fontFamily="'Barlow Condensed',sans-serif" fontSize="9" fontWeight="600" fill={ORANGE} opacity="0.75" textAnchor="end" letterSpacing="0.04em">POWER ZONE 25–35°</text>
+      {[75, 80, 85, 90, 95, 100].map((ev) =>
+      <g key={ev}>
+          <line x1={mx(ev)} y1={PAD.t} x2={mx(ev)} y2={PAD.t + ph} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          <text x={mx(ev)} y={PAD.t + ph + 13} fontFamily="'Barlow',sans-serif" fontSize="8.5" fill="rgba(255,255,255,0.3)" textAnchor="middle">{ev}</text>
+        </g>
+      )}
+      {[0, 10, 20, 30, 40].map((la) =>
+      <g key={la}>
+          <line x1={PAD.l} y1={my(la)} x2={PAD.l + pw} y2={my(la)} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          <text x={PAD.l - 6} y={my(la) + 3.5} fontFamily="'Barlow',sans-serif" fontSize="8.5" fill="rgba(255,255,255,0.3)" textAnchor="end">{la}°</text>
+        </g>
+      )}
+      <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + ph} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={PAD.l} y1={PAD.t + ph} x2={PAD.l + pw} y2={PAD.t + ph} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <text x={PAD.l + pw / 2} y={h} fontFamily="'Barlow Condensed',sans-serif" fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.35)" textAnchor="middle" letterSpacing="0.05em">EXIT VELOCITY (MPH)</text>
+      <text x={9} y={PAD.t + ph / 2} fontFamily="'Barlow Condensed',sans-serif" fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.35)" textAnchor="middle" letterSpacing="0.05em" transform={`rotate(-90,9,${PAD.t + ph / 2})`}>LAUNCH ANG.</text>
+      {SWINGS.map((s, i) => {
+        const iz = inZone(s);
+        return <circle key={i} cx={mx(s.ev)} cy={my(s.la)} r={iz ? 5 : 3.5}
+        fill={iz ? ORANGE : 'rgba(255,255,255,0.2)'} stroke={iz ? `${ORANGE}55` : 'rgba(255,255,255,0.08)'} strokeWidth="1.5"
+        style={animate ? { animation: `dotPop 0.4s cubic-bezier(0.34,1.56,0.64,1) ${0.3 + i * 0.05}s both`, transformOrigin: `${mx(s.ev)}px ${my(s.la)}px` } : {}} />;
+      })}
+      <line x1={mx(avgEV)} y1={PAD.t} x2={mx(avgEV)} y2={PAD.t + ph} stroke="rgba(255,255,255,0.22)" strokeWidth="1" strokeDasharray="3 3" />
+      <text x={mx(avgEV) + 3} y={PAD.t + 9} fontFamily="'Barlow',sans-serif" fontSize="8.5" fill="rgba(255,255,255,0.38)">avg {avgEV}</text>
+    </svg>);
+
+}
+
+// ── Distance Bar Chart ─────────────────────────────────────────────────────
+function DistChart({ animate, w = 260, h = 200 }) {
+  const PAD = { t: 14, r: 8, b: 34, l: 30 };
+  const pw = w - PAD.l - PAD.r,ph = h - PAD.t - PAD.b;
+  const BAR_GAP = 6,barW = (pw - BAR_GAP * (distCounts.length - 1)) / distCounts.length;
+  return (
+    <svg width={w} height={h} style={{ overflow: 'visible' }}>
+      {[1, 2, 3, 4, 5].map((v) => {
+        const y = PAD.t + ph - v / maxDistCount * ph;
+        return <g key={v}>
+          <line x1={PAD.l} y1={y} x2={PAD.l + pw} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          <text x={PAD.l - 4} y={y + 3.5} fontFamily="'Barlow',sans-serif" fontSize="8.5" fill="rgba(255,255,255,0.28)" textAnchor="end">{v}</text>
+        </g>;
+      })}
+      <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + ph} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={PAD.l} y1={PAD.t + ph} x2={PAD.l + pw} y2={PAD.t + ph} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      {distCounts.map((count, i) => {
+        const x = PAD.l + i * (barW + BAR_GAP);
+        const bh = Math.max(count / maxDistCount * ph, 0),y = PAD.t + ph - bh;
+        const best = count === maxDistCount;
+        return <g key={i}>
+          <rect x={x} y={PAD.t} width={barW} height={ph} fill="rgba(255,255,255,0.03)" rx="4" />
+          {count > 0 && <rect x={x} y={y} width={barW} height={bh} fill={best ? ORANGE : `${ORANGE}55`} rx="4"
+          style={animate ? { transformOrigin: `${x + barW / 2}px ${PAD.t + ph}px`, animation: `barGrow 0.55s cubic-bezier(0.22,1,0.36,1) ${0.4 + i * 0.07}s both` } : {}} />}
+          {count > 0 && <text x={x + barW / 2} y={y - 4} fontFamily="'Barlow Condensed',sans-serif" fontSize="10" fontWeight="700" fill={best ? ORANGE : 'rgba(255,255,255,0.4)'} textAnchor="middle">{count}</text>}
+          <text x={x + barW / 2} y={PAD.t + ph + 13} fontFamily="'Barlow',sans-serif" fontSize="7.5" fill="rgba(255,255,255,0.32)" textAnchor="middle">{DIST_BUCKETS[i].label}</text>
+        </g>;
+      })}
+      <text x={PAD.l + pw / 2} y={h} fontFamily="'Barlow Condensed',sans-serif" fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.35)" textAnchor="middle" letterSpacing="0.05em">DISTANCE (FT)</text>
+      <text x={9} y={PAD.t + ph / 2} fontFamily="'Barlow Condensed',sans-serif" fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.35)" textAnchor="middle" letterSpacing="0.05em" transform={`rotate(-90,9,${PAD.t + ph / 2})`}>SWINGS</text>
+    </svg>);
+
+}
+
+// ── Stat pill ──────────────────────────────────────────────────────────────
+function StatPill({ label, value, unit, highlight }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 16px', borderRadius: 12,
+      background: highlight ? `${ORANGE}18` : 'rgba(255,255,255,0.05)',
+      border: `1px solid ${highlight ? ORANGE + '40' : 'rgba(255,255,255,0.08)'}`
+    }}>
+      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 28, lineHeight: 1, color: highlight ? ORANGE : '#fff' }}>
+        {value}<span style={{ fontSize: 14, fontWeight: 600, marginLeft: 2 }}>{unit}</span>
+      </div>
+      <div style={{ fontFamily: "'Barlow',sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+    </div>);
+
+}
+
+// ── Video thumb ────────────────────────────────────────────────────────────
+function VideoThumb() {
+  const [hov, setHov] = useState(false);
+  const W = 50,H = 32;
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ flexShrink: 0, cursor: 'pointer', transition: 'transform 0.15s', transform: hov ? 'scale(1.07)' : 'scale(1)' }}
+    onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+      <rect x="0" y="0" width={W} height={H} rx="7" fill="#252838" />
+      {[6, 12, 18, 24, 30].map((y) => <line key={y} x1="0" y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />)}
+      <rect x="0.75" y="0.75" width={W - 1.5} height={H - 1.5} rx="6.5" fill="none" stroke={hov ? ORANGE : 'rgba(255,255,255,0.2)'} strokeWidth="1.5" />
+      <circle cx={W / 2} cy={H / 2} r="11" fill={`${ORANGE}30`} />
+      <path d={`M${W / 2 - 4} ${H / 2 - 5}L${W / 2 + 6} ${H / 2}L${W / 2 - 4} ${H / 2 + 5}Z`} fill={ORANGE} />
+    </svg>);
+
+}
+
+// ── Panel card shell ───────────────────────────────────────────────────────
+function Panel({ label, labelColor = 'rgba(255,255,255,0.5)', children, style = {}, animate, delay = 0 }) {
+  return (
+    <div style={{
+      background: 'linear-gradient(145deg,rgba(34,36,44,0.97) 0%,rgba(24,26,33,0.98) 100%)',
+      border: '1.5px solid rgba(255,255,255,0.11)',
+      borderRadius: 16,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+      animation: animate ? `fadeUp 0.42s ease ${delay}s both` : 'none',
+      position: 'relative', overflow: 'hidden',
+      ...style
+    }}>
+      {/* Left accent */}
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: labelColor, opacity: 0.65, borderRadius: '0 3px 3px 0' }}></div>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '14px 16px 14px 20px' }}>
+        <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: labelColor, marginBottom: 10, flexShrink: 0, fontSize: "14px" }}>{label}</div>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{children}</div>
+      </div>
+    </div>);
+
+}
+
+// ── Chat box (pre-seeded + live) ───────────────────────────────────────────
+function ChatBox({ animate, width }) {
+  const [messages, setMessages] = useState(FAKE_CHAT);
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+  useEffect(() => {bottomRef.current?.scrollIntoView({ behavior: 'smooth' });}, [messages, loading]);
+
+  const send = async () => {
+    if (!text.trim() || loading) return;
+    const msg = text.trim();setText('');
+    setMessages((p) => [...p, { role: 'user', content: msg }]);
+    setLoading(true);
+    try {
+      const ctx = `You are B1 Coach, warm and direct. Player: Bill (16yo), session goal: Power & Home Runs. Avg EV: ${avgEV}mph, Avg LA: ${avgLA}°, ${zoneCount}/${SWINGS.length} in power zone. Reply in 2-3 sentences.`;
+      const reply = await window.claude.complete({ messages: [{ role: 'user', content: ctx + '\n\nPlayer: ' + msg }] });
+      setMessages((p) => [...p, { role: 'assistant', content: reply }]);
+    } catch {setMessages((p) => [...p, { role: 'assistant', content: 'Connection issue — try again.' }]);}
+    setLoading(false);
+  };
+
+  return (
+    <Panel label="Virtual Coach" labelColor={ORANGE} animate={animate} delay={0.32} style={{ flex: '0 0 auto', width, minWidth: width }}>
+      {/* Messages */}
+      <div className="chat-scroll" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 2 }}>
+        {messages.map((m, i) =>
+        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.04em', color: m.role === 'user' ? 'rgba(255,255,255,0.3)' : ORANGE, paddingLeft: 2, paddingRight: 2, whiteSpace: 'nowrap' }}>{m.role === 'user' ? 'You' : 'Coach'}</div>
+            <div style={{
+            maxWidth: '94%', padding: '7px 10px',
+            borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+            background: m.role === 'user' ? 'rgba(255,255,255,0.08)' : `${ORANGE}15`,
+            border: m.role === 'user' ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${ORANGE}30`,
+            fontFamily: "'Barlow',sans-serif", fontSize: 12.5, lineHeight: 1.5,
+            color: m.role === 'user' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.9)'
+          }}>{m.content}</div>
+          </div>
+        )}
+        {loading && <div style={{ display: 'flex', gap: 4, padding: '4px 2px' }}>{[0, 1, 2].map((i) => <div key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: ORANGE, animation: `blink 1.2s ease ${i * 0.18}s infinite` }} />)}</div>}
+        <div ref={bottomRef} />
+      </div>
+      {/* Input */}
+      <div style={{ flexShrink: 0, marginTop: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(16,18,24,0.9)', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 11, padding: '0 8px 0 10px', height: 38 }}>
+          <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()}
+          placeholder="Ask your coach..."
+          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontFamily: "'Barlow',sans-serif", fontSize: 12.5, color: 'rgba(255,255,255,0.85)' }} />
+          <button onClick={send} disabled={!text.trim() || loading}
+          style={{ width: 26, height: 26, borderRadius: 7, border: 'none', cursor: text.trim() ? 'pointer' : 'default', background: text.trim() ? ORANGE : 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.18s', flexShrink: 0 }}>
+            <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5h9M6 1l4 3.5-4 3.5" stroke={text.trim() ? 'white' : 'rgba(255,255,255,0.25)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+        </div>
+      </div>
+    </Panel>);
+
+}
+
+// ── Radar decor ────────────────────────────────────────────────────────────
+function RadarDecor() {
+  return (
+    <svg style={{ position: 'absolute', top: -80, right: -80, opacity: 0.028, pointerEvents: 'none' }} width="340" height="340" viewBox="0 0 340 340" fill="none">
+      {[1, 2, 3, 4, 5].map((i) => <circle key={i} cx="300" cy="40" r={i * 55} stroke="white" strokeWidth="1" />)}
+      <line x1="300" y1="40" x2="300" y2="300" stroke="white" strokeWidth="1" />
+      <line x1="300" y1="40" x2="40" y2="300" stroke="white" strokeWidth="1" />
+    </svg>);
+
+}
+
+// ── iPad shell ─────────────────────────────────────────────────────────────
+function IPadShell({ children }) {
+  return (
+    <div style={{ width: SHELL_W, height: SHELL_H, background: '#1B1B1D', borderRadius: 36,
+      boxShadow: '0 40px 100px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.09)',
+      position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: `${BEZEL}px ${BEZEL}px 0` }}>
+      <div style={{ position: 'absolute', top: BEZEL + 12, right: 80, width: 8, height: 8, borderRadius: '50%', background: '#252527', zIndex: 10 }} />
+      <div style={{ position: 'absolute', right: -3, top: '38%', width: 4, height: 36, borderRadius: 3, background: '#242426' }} />
+      <div style={{ position: 'absolute', left: -3, top: '30%', width: 4, height: 28, borderRadius: 3, background: '#242426' }} />
+      <div style={{ position: 'absolute', left: -3, top: '44%', width: 4, height: 28, borderRadius: 3, background: '#242426' }} />
+      <div style={{ width: SCREEN_W, height: SCREEN_H, borderRadius: 24, overflow: 'hidden', background: '#000', position: 'relative' }}>{children}</div>
+      <div style={{ height: 44, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 100, height: 4, borderRadius: 100, background: 'rgba(255,255,255,0.18)' }} />
+      </div>
+    </div>);
+
+}
+
+// ── App ────────────────────────────────────────────────────────────────────
+function App() {
+  const [animate, setAnimate] = useState(false);
+  const [shellScale, setShellScale] = useState(1);
+
+  useEffect(() => {setTimeout(() => setAnimate(true), 100);}, []);
+  useEffect(() => {
+    const calc = () => setShellScale(Math.min(window.innerWidth / (SHELL_W + 40), window.innerHeight / (SHELL_H + 40), 1));
+    calc();window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
+
+  // Layout constants (all in screen px)
+  const PAD = 14; // outer padding
+  const GAP = 8; // gap between panels
+  const availW = SCREEN_W - PAD * 2; // 996
+
+  // Top section: left box + right 2 boxes
+  const leftW = 290;
+  const rightW = availW - leftW - GAP; // 698
+
+  // Bottom section widths — chat matches leftW, charts equal
+  const chatW = leftW;
+  const chartW = Math.floor((availW - chatW - GAP * 2) / 2);
+  const scatW = chartW;
+  const distW = chartW;
+
+  // Heights
+  const headerH = 30 + 52 + 1; // status + header + divider = 83
+  const topH = 352;
+  const botH = SCREEN_H - headerH - topH - PAD * 2 - GAP; // ~283
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100vw', height: '100vh', background: '#080809' }}>
+      <div style={{ position: 'relative', width: SHELL_W * shellScale, height: SHELL_H * shellScale, flexShrink: 0 }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: SHELL_W, height: SHELL_H, transform: `scale(${shellScale})`, transformOrigin: 'top left' }}>
+          <IPadShell>
+            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(155deg,#141518 0%,#0C0D0F 55%,#0E0D12 100%)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+              <RadarDecor />
+
+              {/* Status bar */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px 5px', fontFamily: "'Barlow',sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.38)', flexShrink: 0 }}>
+                <span>9:41 AM</span>
+                <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
+                  <svg width="16" height="11" viewBox="0 0 17 12" fill="none">{[0, 1, 2, 3].map((i) => <rect key={i} x={i * 4} y={12 - (4 + i * 2.5)} width="3" height={4 + i * 2.5} rx="0.7" fill="rgba(255,255,255,0.5)" />)}</svg>
+                  <svg width="15" height="11" viewBox="0 0 16 12" fill="none"><rect x="0.5" y="0.5" width="13" height="11" rx="2" stroke="rgba(255,255,255,0.32)" /><rect x="2" y="2" width="10" height="8" rx="1" fill="rgba(255,255,255,0.5)" /></svg>
+                </div>
+              </div>
+
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '3px 24px 9px', gap: 14, flexShrink: 0, animation: animate ? 'fadeUp 0.4s ease both' : 'none' }}>
+                <TMLogo />
+                <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, background: `${ORANGE}20`, border: `1.5px solid ${ORANGE}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 12, color: ORANGE }}>BF</div>
+                  <div>
+                    <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 15, color: 'rgba(255,255,255,0.9)', lineHeight: 1 }}>Bill the Great Bambino</div>
+                    <div style={{ fontFamily: "'Barlow',sans-serif", fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>Session debrief · Today</div>
+                  </div>
+                </div>
+                <div style={{ flex: 1 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 11px', borderRadius: 9, background: `${ORANGE}15`, border: `1px solid ${ORANGE}35` }}>
+                  <svg width="12" height="12" viewBox="0 0 48 48" fill="none"><path d="M24 6L28 18H40L30 26L34 38L24 30L14 38L18 26L8 18H20L24 6Z" stroke={ORANGE} strokeWidth="3" fill={ORANGE} fillOpacity="0.2" /></svg>
+                  <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 12, color: ORANGE, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Power & Home Runs</span>
+                </div>
+              </div>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
+
+              {/* ── Content ── */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: `${PAD}px`, gap: GAP, minHeight: 0 }}>
+
+                {/* TOP SECTION — L-shape */}
+                <div style={{ display: 'flex', gap: GAP, height: topH, flexShrink: 0 }}>
+
+                  {/* LEFT: Session Summary tall box */}
+                  <Panel label="Session Summary" labelColor={ORANGE} animate={animate} delay={0.08}
+                  style={{ width: leftW, flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Barlow',sans-serif", lineHeight: 1.6, color: 'rgba(255,255,255,0.78)', fontSize: "18px", flex: 1 }}>
+                      Your average exit velocity was solid at{' '}
+                      <strong style={{ color: '#fff' }}>{avgEV} mph</strong>. Launch angle averaged{' '}
+                      <strong style={{ color: '#fff' }}>{avgLA}°</strong>, just below the 25–35° power zone.{' '}
+                      <strong style={{ color: ORANGE }}>{zoneCount} of {SWINGS.length}</strong> swings landed in the zone — those were your biggest hits.
+                    </div>
+                    {/* Stat pills */}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0, paddingTop: 10 }}>
+                      <StatPill label="Avg EV" value={avgEV} unit=" mph" highlight />
+                      <StatPill label="Avg LA" value={avgLA} unit="°" highlight={false} />
+                      <StatPill label="In Zone" value={zoneCount} unit={`/${SWINGS.length}`} highlight={false} />
+                    </div>
+                  </Panel>
+
+                  {/* RIGHT: two stacked boxes */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP }}>
+
+                    {/* What This Means */}
+                    <Panel label="What This Means" labelColor="#F5A623" animate={animate} delay={0.14} style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Barlow',sans-serif", lineHeight: 1.65, color: 'rgba(255,255,255,0.78)', fontSize: "18px" }}>
+                        You're generating real bat speed, but leaving distance on the table by hitting too flat. When your launch angle was in the zone, your balls traveled{' '}
+                        <strong style={{ color: '#fff' }}>20–50 feet farther</strong> on average — that's the difference between a warning track out and a home run.
+                      </div>
+                    </Panel>
+
+                    {/* Try This Next Session */}
+                    <Panel label="Try This Next Session" labelColor={ORANGE} animate={animate} delay={0.2} style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                        {TIPS.map((tip, i) =>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <VideoThumb />
+                            <div style={{ flex: 1, fontFamily: "'Barlow',sans-serif", lineHeight: 1.4, color: 'rgba(255,255,255,0.76)', fontSize: "15px" }}>
+                              <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 13, color: ORANGE, marginRight: 5 }}>{i + 1}.</span>
+                              {tip}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Panel>
+                  </div>
+                </div>
+
+                {/* BOTTOM SECTION — chat + 2 charts */}
+                <div style={{ display: 'flex', gap: GAP, flex: 1, minHeight: 0 }}>
+
+                  {/* Chat */}
+                  <ChatBox animate={animate} width={chatW} />
+
+                  {/* Scatter plot */}
+                  <Panel label="Launch Angle vs Exit Velocity" animate={animate} delay={0.36} style={{ flex: '0 0 auto', width: scatW }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+                      <ScatterPlot animate={animate} w={scatW - 36} h={botH - 52} />
+                    </div>
+                  </Panel>
+
+                  {/* Distance bar chart */}
+                  <Panel label="Distance Distribution" animate={animate} delay={0.4} style={{ flex: '0 0 auto', width: distW }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+                      <DistChart animate={animate} w={distW - 36} h={botH - 52} />
+                    </div>
+                  </Panel>
+                </div>
+              </div>
+            </div>
+          </IPadShell>
+        </div>
+      </div>
+    </div>);
+
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
