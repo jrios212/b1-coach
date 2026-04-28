@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { sendChatMessage } from './coachApi'
 
 const ACCENT = '#FF6B1A'
 const GOLD   = '#F5A623'
@@ -232,7 +233,7 @@ function ChartPlaceholder({ chart }) {
 }
 
 // ── Virtual Coach chat panel ───────────────────────────────────────────────
-function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay }) {
+function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessionContext, onChartSignal }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
@@ -245,11 +246,21 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay }) {
     if (!text.trim() || loading) return
     const msg = text.trim()
     setText('')
-    onMessagesChange?.([...messages, { role: 'user', content: msg }])
+    const updatedMessages = [...messages, { role: 'user', content: msg }]
+    onMessagesChange?.(updatedMessages)
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-    }, 0)
+    sendChatMessage({ ...sessionContext, messages: updatedMessages })
+      .then((result) => {
+        onMessagesChange?.([...updatedMessages, { role: 'coach', content: result.message }])
+        setLoading(false)
+        if (result.chart) {
+          onChartSignal?.(result.chart)
+        }
+      })
+      .catch(() => {
+        onMessagesChange?.([...updatedMessages, { role: 'coach', content: "Sorry, I couldn't connect right now. Try again in a moment." }])
+        setLoading(false)
+      })
   }
 
   const expandIcon = (
@@ -419,6 +430,8 @@ export default function DebriefScreen({
   chatMessages = [],
   onChatUpdate = null,
   sessionCapReached = false,
+  sessionContext = null,
+  onChartSignal = null,
 }) {
   const [time, setTime] = useState('')
   const [revealed, setRevealed] = useState(false)
@@ -739,7 +752,7 @@ export default function DebriefScreen({
         <div style={{ display: 'flex', gap: GAP, flex: 1, minHeight: 0 }}>
 
           {/* Virtual Coach chat */}
-          <ChatPanel messages={chatMessages} onMessagesChange={onChatUpdate} onExpandChat={onExpandChat} delay={0.32} />
+          <ChatPanel messages={chatMessages} onMessagesChange={onChatUpdate} onExpandChat={onExpandChat} delay={0.32} sessionContext={sessionContext} onChartSignal={onChartSignal} />
 
           {/* Chart slots */}
           {chartSlots.map((chart, i) => {

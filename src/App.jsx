@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import LiveSessionScreen from './LiveSessionScreen'
 import DebriefScreen from './DebriefScreen'
 import ConversationScreen from './ConversationScreen'
+import { generateDebrief } from './coachApi'
 
 // ── Goal definitions ───────────────────────────────────────────────────────
 // These are the app's predefined coaching focus options.
@@ -729,6 +730,9 @@ export default function App() {
 
   const [sessionHistory, setSessionHistory] = useState([])
   const [viewingSession, setViewingSession] = useState(null)
+  const [debriefContent, setDebriefContent] = useState(null)
+  const [conversationMessages, setConversationMessages] = useState([])
+  const [conversationStats, setConversationStats] = useState(null)
 
   const computeStats = (swings) => {
     const total = swings.length
@@ -763,12 +767,29 @@ export default function App() {
 
   const handleEndSession = () => {
     const stats = computeStats(activeSwings)
-    setSessionHistory((prev) => [
-      ...prev,
-      { sessionNumber, swings: activeSwings, stats, messages: [] },
-    ])
+    const newEntry = { sessionNumber, swings: activeSwings, stats, messages: [] }
+    const updatedHistory = [...sessionHistory, newEntry]
+
+    setSessionHistory(updatedHistory)
     setViewingSession(sessionNumber)
-    setScreen('debrief')
+    setScreen('loading')
+
+    const sessionsForDebrief = updatedHistory.filter((s) => s.sessionNumber <= sessionNumber)
+
+    generateDebrief({
+      goal: selectedGoal,
+      player,
+      sessions: sessionsForDebrief,
+      viewingSessionNumber: sessionNumber,
+    })
+      .then((result) => {
+        setDebriefContent(result)
+        setScreen('debrief')
+      })
+      .catch(() => {
+        setDebriefContent(null)
+        setScreen('debrief')
+      })
   }
 
   if (screen === 'goal') {
@@ -858,8 +879,45 @@ export default function App() {
     )
   }
 
+  if (screen === 'loading') {
+    return (
+      <div style={{
+        width: '100vw', height: '100vh',
+        background: 'linear-gradient(155deg, #141518 0%, #0C0D0F 55%, #0E0D12 100%)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        gap: 20,
+      }}>
+        <TrackManLogo color={ACCENT} />
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.4)',
+              animation: `blink 1.2s ease ${i * 0.18}s infinite`,
+            }} />
+          ))}
+        </div>
+        <div style={{
+          fontFamily: "'Barlow', sans-serif",
+          fontSize: 14, color: 'rgba(255,255,255,0.35)',
+          letterSpacing: '0.02em',
+        }}>
+          Your coach is reviewing the session…
+        </div>
+      </div>
+    )
+  }
+
   if (screen === 'debrief') {
     const viewed = sessionHistory.find((s) => s.sessionNumber === viewingSession) ?? sessionHistory.at(-1)
+
+    const sessionContext = {
+      goal: selectedGoal,
+      player,
+      sessions: sessionHistory.filter((s) => s.sessionNumber <= viewingSession),
+      viewingSessionNumber: viewingSession,
+    }
 
     return (
       <div style={{ width: '100vw', height: '100vh' }}>
@@ -869,13 +927,17 @@ export default function App() {
           goalId={selectedGoal?.id}
           goalLabel={selectedGoal?.label}
           sessionData={viewed?.stats ?? null}
-          coachingSummary={null}
-          whatThisMeans={null}
-          nextSessionTips={[]}
-          charts={[]}
+          coachingSummary={debriefContent?.coachingSummary ?? null}
+          whatThisMeans={debriefContent?.whatThisMeans ?? null}
+          nextSessionTips={debriefContent?.nextSessionTips ?? []}
+          charts={debriefContent?.charts ?? []}
           sessions={sessions}
           onSessionToggle={(num) => setViewingSession(num)}
-          onExpandChat={() => setScreen('conversation')}
+          onExpandChat={() => {
+            setConversationMessages(viewed?.messages ?? [])
+            setConversationStats(viewed?.stats ?? null)
+            setScreen('conversation')
+          }}
           onHome={handleHome}
           chatMessages={viewed?.messages ?? []}
           onChatUpdate={(newMessages) =>
@@ -897,6 +959,8 @@ export default function App() {
             setSessions((prev) => [...prev, newNum])
             setScreen('live')
           }}
+          sessionContext={sessionContext}
+          onChartSignal={() => setScreen('conversation')}
         />
       </div>
     )
@@ -906,20 +970,12 @@ export default function App() {
     <div style={{ width: '100vw', height: '100vh' }}>
       <ConversationScreen
         player={player}
-        sessionNumber={sessionNumber}
+        sessionNumber={viewingSession ?? sessionNumber}
         goalId={selectedGoal?.id ?? 'power'}
         goalLabel={selectedGoal?.label ?? 'Power & Home Runs'}
-        messages={[
-          { role: 'user', content: 'Why were my best hits all in that 88–92 mph range?' },
-          { role: 'coach', content: "That's your sweet spot right now. Those are the swings where your timing and contact point lined up. The goal is making that your floor, not your ceiling." },
-          { role: 'user', content: 'Which swings should I focus on replicating?' },
-          { role: 'coach', content: 'Look at swings 3, 5, and 11. What they have in common: your front side stayed closed longer and your bat path came through at an upward angle.' },
-        ]}
-        charts={[
-          { type: 'scatter', label: 'Launch Angle vs Exit Velocity' },
-          { type: 'bar', label: 'Distance Distribution' },
-        ]}
-        sessionStats={{ avgExitVelocity: 91, avgLaunchAngle: 22, inZoneCount: 7, totalSwings: 15 }}
+        messages={conversationMessages}
+        charts={debriefContent?.charts?.map((key) => ({ type: key })) ?? []}
+        sessionStats={conversationStats}
         onSendMessage={(msg) => console.log('send:', msg)}
         onCollapse={() => setScreen('debrief')}
         isLoading={false}
