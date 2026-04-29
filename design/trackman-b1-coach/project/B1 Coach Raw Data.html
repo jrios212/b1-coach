@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B1 Coach — Session Raw Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    min-height:100%;
+    background: radial-gradient(ellipse at 60% 20%, #1a1620 0%, #0c0d0f 60%, #080809 100%);
+    display:flex; align-items:center; justify-content:center;
+    padding:48px 24px;
+    font-family:'Barlow', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .card {
+    width:700px;
+    background:linear-gradient(160deg, #1c1e27 0%, #141518 60%, #111214 100%);
+    border:1.5px solid rgba(255,255,255,0.1);
+    border-radius:18px;
+    box-shadow:
+      0 32px 80px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(255,255,255,0.04),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow:hidden;
+  }
+
+  /* Header */
+  .card-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 22px 16px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    background:linear-gradient(180deg, rgba(255,107,26,0.06) 0%, transparent 100%);
+  }
+  .card-header-left {
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .card-header-eyebrow {
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700; font-size:10px; letter-spacing:0.18em;
+    text-transform:uppercase; color:rgba(255,255,255,0.3);
+  }
+  .card-header-title {
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:800; font-size:20px; letter-spacing:0.06em;
+    text-transform:uppercase; color:#FF6B1A;
+    line-height:1;
+  }
+  .close-btn {
+    width:30px; height:30px; border-radius:8px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background 0.15s;
+    flex-shrink:0;
+  }
+  .close-btn:hover { background:rgba(255,255,255,0.12); }
+  .close-btn svg { display:block; }
+
+  /* Table */
+  .table-wrap { padding:0; }
+  table {
+    width:100%;
+    border-collapse:collapse;
+  }
+  thead tr {
+    border-bottom:1.5px solid rgba(255,107,26,0.35);
+  }
+  thead th {
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700; font-size:10px; letter-spacing:0.14em;
+    text-transform:uppercase; color:#FF6B1A;
+    padding:11px 14px 10px;
+    text-align:right;
+  }
+  thead th:first-child { text-align:center; width:56px; }
+
+  tbody tr {
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    transition:background 0.1s;
+  }
+  tbody tr:nth-child(odd)  { background:rgba(255,255,255,0.015); }
+  tbody tr:nth-child(even) { background:transparent; }
+  tbody tr:hover { background:rgba(255,107,26,0.06); }
+  tbody tr:last-child { border-bottom:none; }
+
+  tbody td {
+    padding:9px 14px;
+    font-family:'Barlow Condensed', sans-serif;
+    font-size:16px; font-weight:600;
+    color:rgba(255,255,255,0.82);
+    text-align:right; letter-spacing:0.01em;
+  }
+  tbody td:first-child {
+    text-align:center;
+    font-size:12px; font-weight:700; letter-spacing:0.08em;
+    color:rgba(255,255,255,0.28);
+  }
+  /* Highlight in-zone rows */
+  tbody tr.in-zone td { color:rgba(255,255,255,0.95); }
+  tbody tr.in-zone td.ev-cell { color:#FF6B1A; }
+  tbody tr.in-zone td.la-cell { color:#FF9F55; }
+
+  /* Direction: negative = left pull, positive = right */
+  td.dir-neg { color:#7EC8C8; }
+  td.dir-pos { color:rgba(255,255,255,0.65); }
+
+  /* Footer */
+  .card-footer {
+    padding:11px 22px 14px;
+    border-top:1px solid rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px;
+  }
+  .footer-note {
+    font-family:'Barlow', sans-serif;
+    font-size:11px; color:rgba(255,255,255,0.2);
+    letter-spacing:0.01em;
+  }
+  .footer-badge {
+    display:flex; align-items:center; gap:6px;
+    padding:3px 10px; border-radius:100px;
+    background:rgba(255,107,26,0.1);
+    border:1px solid rgba(255,107,26,0.25);
+  }
+  .footer-badge-dot {
+    width:6px; height:6px; border-radius:50%;
+    background:#FF6B1A;
+  }
+  .footer-badge-text {
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700; font-size:10px; letter-spacing:0.1em;
+    text-transform:uppercase; color:#FF6B1A;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Header -->
+  <div class="card-header">
+    <div class="card-header-left">
+      <div class="card-header-eyebrow">Power &amp; Home Runs · 15 swings</div>
+      <div class="card-header-title">Session Raw Data · Session 1</div>
+    </div>
+    <div class="close-btn">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M1 1l10 10M11 1L1 11" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Exit Velocity</th>
+          <th>Launch Angle</th>
+          <th>Direction</th>
+          <th>Distance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- in-zone = LA 25-35° -->
+        <tr class="in-zone">
+          <td>01</td>
+          <td class="ev-cell">91 mph</td>
+          <td class="la-cell">28°</td>
+          <td class="dir-neg">-3.2°</td>
+          <td>312 ft</td>
+        </tr>
+        <tr>
+          <td>02</td>
+          <td>88 mph</td>
+          <td>14°</td>
+          <td class="dir-pos">+1.8°</td>
+          <td>258 ft</td>
+        </tr>
+        <tr class="in-zone">
+          <td>03</td>
+          <td class="ev-cell">95 mph</td>
+          <td class="la-cell">30°</td>
+          <td class="dir-neg">-7.1°</td>
+          <td>341 ft</td>
+        </tr>
+        <tr>
+          <td>04</td>
+          <td>87 mph</td>
+          <td>8°</td>
+          <td class="dir-pos">+4.5°</td>
+          <td>223 ft</td>
+        </tr>
+        <tr class="in-zone">
+          <td>05</td>
+          <td class="ev-cell">92 mph</td>
+          <td class="la-cell">26°</td>
+          <td class="dir-neg">-2.0°</td>
+          <td>318 ft</td>
+        </tr>
+        <tr>
+          <td>06</td>
+          <td>85 mph</td>
+          <td>6°</td>
+          <td class="dir-pos">+9.3°</td>
+          <td>208 ft</td>
+        </tr>
+        <tr class="in-zone">
+          <td>07</td>
+          <td class="ev-cell">89 mph</td>
+          <td class="la-cell">33°</td>
+          <td class="dir-neg">-5.8°</td>
+          <td>298 ft</td>
+        </tr>
+        <tr>
+          <td>08</td>
+          <td>86 mph</td>
+          <td>19°</td>
+          <td class="dir-pos">+0.6°</td>
+          <td>265 ft</td>
+        </tr>
+        <tr>
+          <td>09</td>
+          <td>91 mph</td>
+          <td>16°</td>
+          <td class="dir-neg">-11.2°</td>
+          <td>273 ft</td>
+        </tr>
+        <tr class="in-zone">
+          <td>10</td>
+          <td class="ev-cell">90 mph</td>
+          <td class="la-cell">25°</td>
+          <td class="dir-pos">+3.1°</td>
+          <td>290 ft</td>
+        </tr>
+        <tr class="in-zone">
+          <td>11</td>
+          <td class="ev-cell">94 mph</td>
+          <td class="la-cell">29°</td>
+          <td class="dir-neg">-1.4°</td>
+          <td>335 ft</td>
+        </tr>
+        <tr>
+          <td>12</td>
+          <td>83 mph</td>
+          <td>5°</td>
+          <td class="dir-pos">+13.7°</td>
+          <td>198 ft</td>
+        </tr>
+        <tr>
+          <td>13</td>
+          <td>90 mph</td>
+          <td>21°</td>
+          <td class="dir-pos">+6.2°</td>
+          <td>279 ft</td>
+        </tr>
+        <tr class="in-zone">
+          <td>14</td>
+          <td class="ev-cell">95 mph</td>
+          <td class="la-cell">35°</td>
+          <td class="dir-neg">-8.9°</td>
+          <td>344 ft</td>
+        </tr>
+        <tr class="in-zone">
+          <td>15</td>
+          <td class="ev-cell">93 mph</td>
+          <td class="la-cell">27°</td>
+          <td class="dir-neg">-4.6°</td>
+          <td>328 ft</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div class="card-footer">
+    <div class="footer-note">Data generated by TrackMan B1 · Session simulation</div>
+    <div class="footer-badge">
+      <div class="footer-badge-dot"></div>
+      <div class="footer-badge-text">7 / 15 in power zone</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
