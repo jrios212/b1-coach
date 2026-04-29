@@ -930,6 +930,7 @@ export default function App() {
         messages={conversationMessages}
         charts={debriefContent?.charts?.map((key) => ({ type: key })) ?? []}
         sessionStats={conversationStats}
+        topEV={conversationStats ? Math.max(...(sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings.map((s) => s.hit.launch.exitSpeed) ?? [0])) : null}
         onSendMessage={(msg) => console.log('send:', msg)}
         onCollapse={() => setScreen('debrief')}
         isLoading={false}

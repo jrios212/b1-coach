@@ -245,6 +245,7 @@ export default function ConversationScreen({
   onSendMessage,
   onCollapse,
   isLoading = false,
+  topEV = null,
 }) {
   const [text, setText] = useState('')
   const [revealed, setRevealed] = useState(false)
@@ -302,7 +303,7 @@ export default function ConversationScreen({
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center',
-        padding: '3px 24px 9px', gap: 14, flexShrink: 0,
+        padding: '11px 24px 9px', gap: 14, flexShrink: 0,
         animation: revealed ? 'fadeUp 0.4s ease both' : 'none',
       }}>
         <TMLogo />
@@ -363,12 +364,30 @@ export default function ConversationScreen({
       {/* ── Body ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 12, gap: 10, minHeight: 0 }}>
 
-        {/* Main row: chat (55%) + charts (45%) */}
+        {/* Main row: charts (40%) + chat */}
         <div style={{ flex: 1, display: 'flex', gap: 10, minHeight: 0 }}>
 
-          {/* ── Left: chat panel ── */}
+          {/* ── Left: 3 stacked chart placeholders ── */}
+          <div style={{ flex: '0 0 40%', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
+            {chartSlots.map(({ chart, isPadded, flexStyle }, i) => (
+              <ChartPanel
+                key={i}
+                label={
+                  chart?.label ??
+                  (chart?.type
+                    ? chart.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                    : `Chart ${i + 1}`)
+                }
+                delay={0.14 + i * 0.06}
+                flexStyle={flexStyle}
+                isPadded={isPadded}
+              />
+            ))}
+          </div>
+
+          {/* ── Right: chat panel ── */}
           <div style={{
-            flex: '0 0 55%',
+            flex: 1,
             display: 'flex', flexDirection: 'column',
             background: 'linear-gradient(145deg, rgba(34,36,44,0.97) 0%, rgba(24,26,33,0.98) 100%)',
             border: '1.5px solid rgba(255,255,255,0.11)',
@@ -451,6 +470,51 @@ export default function ConversationScreen({
                 )}
 
                 {messages.map((m, i) => {
+                  if (m.content === '__tips__' && Array.isArray(m.tips)) {
+                    return (
+                      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
+                        <div style={{
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontWeight: 700, fontSize: 10, letterSpacing: '0.04em',
+                          color: ACCENT, paddingLeft: 2, paddingRight: 2, whiteSpace: 'nowrap',
+                        }}>
+                          Coach
+                        </div>
+                        <div style={{
+                          maxWidth: '88%', padding: '9px 13px',
+                          borderRadius: '12px 12px 12px 4px',
+                          background: `${ACCENT}15`,
+                          border: `1px solid ${ACCENT}30`,
+                          fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
+                          color: 'rgba(255,255,255,0.9)',
+                        }}>
+                          <div style={{ marginBottom: 8 }}>Here are your top priorities for next session:</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {m.tips.map((tip, j) => (
+                              <div key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                                <div style={{
+                                  width: 18, height: 18, borderRadius: '50%',
+                                  background: `${ACCENT}25`, border: `1.5px solid ${ACCENT}60`,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  flexShrink: 0, marginTop: 2,
+                                }}>
+                                  <span style={{
+                                    fontFamily: "'Barlow Condensed', sans-serif",
+                                    fontWeight: 800, fontSize: 9, color: ACCENT,
+                                  }}>{j + 1}</span>
+                                </div>
+                                <div style={{
+                                  fontFamily: "'Barlow', sans-serif",
+                                  fontSize: 14, lineHeight: 1.5,
+                                  color: 'rgba(255,255,255,0.85)',
+                                }}>{tip}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
                   const isUser = m.role === 'user'
                   return (
                     <div key={i} style={{
@@ -471,7 +535,7 @@ export default function ConversationScreen({
                         background: isUser ? 'rgba(255,255,255,0.07)' : `${ACCENT}12`,
                         border: isUser ? '1px solid rgba(255,255,255,0.09)' : `1px solid ${ACCENT}28`,
                         fontFamily: "'Barlow', sans-serif",
-                        fontSize: 13.5, lineHeight: 1.6,
+                        fontSize: 14, lineHeight: 1.6,
                         color: isUser ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.92)',
                       }}>
                         {m.content}
@@ -517,7 +581,7 @@ export default function ConversationScreen({
                       flex: 1, background: 'transparent',
                       border: 'none', outline: 'none',
                       fontFamily: "'Barlow', sans-serif",
-                      fontSize: 13, color: 'rgba(255,255,255,0.85)',
+                      fontSize: 14, color: 'rgba(255,255,255,0.85)',
                     }}
                   />
                   <button
@@ -541,51 +605,40 @@ export default function ConversationScreen({
               </div>
             </div>
           </div>
-
-          {/* ── Right: 3 stacked chart placeholders ── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
-            {chartSlots.map(({ chart, isPadded, flexStyle }, i) => (
-              <ChartPanel
-                key={i}
-                label={
-                  chart?.label ??
-                  (chart?.type
-                    ? chart.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-                    : `Chart ${i + 1}`)
-                }
-                delay={0.14 + i * 0.06}
-                flexStyle={flexStyle}
-                isPadded={isPadded}
-              />
-            ))}
-          </div>
         </div>
 
         {/* ── Bottom stat bar ── */}
         <div style={{
-          display: 'flex', gap: 8, flexShrink: 0, height: 48,
+          display: 'flex', gap: 1, flexShrink: 0, height: 56,
           animation: revealed ? 'fadeUp 0.42s ease 0.32s both' : 'none',
         }}>
-          <StatPill
-            label="Avg EV"
-            value={avgEV != null ? `${avgEV} mph` : '—'}
-            highlight={avgEV != null && avgEV >= 88}
-          />
-          <StatPill
-            label="Avg LA"
-            value={avgLA != null ? `${avgLA}°` : '—'}
-            highlight={false}
-          />
-          <StatPill
-            label="In Zone"
-            value={inZone != null && total != null ? `${inZone}/${total}` : '—'}
-            highlight={false}
-          />
-          <StatPill
-            label="Session"
-            value={sessionNumber != null ? `S${sessionNumber}` : '—'}
-            highlight={false}
-          />
+          {[
+            { label: 'Avg EV',  value: avgEV != null ? `${avgEV} mph` : '—',                          highlight: avgEV != null && avgEV >= 88 },
+            { label: 'Avg LA',  value: avgLA != null ? `${avgLA}°` : '—',                             highlight: false },
+            { label: 'In Zone', value: inZone != null && total != null ? `${inZone}/${total}` : '—',  highlight: false },
+            { label: 'Top EV',  value: topEV != null ? `${topEV} mph` : '—',                         highlight: topEV != null && topEV >= 95 },
+          ].map((tile) => (
+            <div key={tile.label} style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              background: tile.highlight ? `${ACCENT}18` : 'rgba(255,255,255,0.04)',
+            }}>
+              <div style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 800, fontSize: 18, lineHeight: 1,
+                color: tile.highlight ? ACCENT : 'rgba(255,255,255,0.85)',
+              }}>
+                {tile.value}
+              </div>
+              <div style={{
+                fontFamily: "'Barlow', sans-serif",
+                fontSize: 10, color: 'rgba(255,255,255,0.35)',
+                marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                {tile.label}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
