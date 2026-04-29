@@ -19,7 +19,7 @@ Respond ONLY with valid JSON matching this exact shape, no preamble, no markdown
 {
   "coachingSummary": "2-3 sentences max",
   "whatThisMeans": "1-2 sentences translating the numbers into real baseball terms",
-  "nextSessionTips": ["tip1", "tip2", "tip3"],
+  "nextSessionTips": ["tip1", "tip2"],
   "charts": ["chart_key_1", "chart_key_2"]
 }
 

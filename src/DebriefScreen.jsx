@@ -307,7 +307,7 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
               borderRadius: '12px 12px 12px 4px',
               background: `${ACCENT}15`,
               border: `1px solid ${ACCENT}30`,
-              fontFamily: "'Barlow', sans-serif", fontSize: 12.5, lineHeight: 1.5,
+              fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
               color: 'rgba(255,255,255,0.9)',
             }}>
               <div style={{ marginBottom: 8 }}>Here are your top priorities for next session:</div>
@@ -327,7 +327,7 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
                     </div>
                     <div style={{
                       fontFamily: "'Barlow', sans-serif",
-                      fontSize: 12.5, lineHeight: 1.5,
+                      fontSize: 14, lineHeight: 1.5,
                       color: 'rgba(255,255,255,0.85)',
                     }}>{tip}</div>
                   </div>
@@ -376,7 +376,7 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
               borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
               background: m.role === 'user' ? 'rgba(255,255,255,0.08)' : `${ACCENT}15`,
               border: m.role === 'user' ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${ACCENT}30`,
-              fontFamily: "'Barlow', sans-serif", fontSize: 12.5, lineHeight: 1.5,
+              fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
               color: m.role === 'user' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.9)',
             }}>
               {m.content}
@@ -706,7 +706,7 @@ export default function DebriefScreen({
             {/* coachingSummary */}
             <div style={{
               fontFamily: "'Barlow', sans-serif",
-              fontSize: 18, lineHeight: 1.6,
+              fontSize: 15, lineHeight: 1.6,
               color: 'rgba(255,255,255,0.78)',
               flex: 1, overflowY: 'auto', minHeight: 0,
             }}>
@@ -736,7 +736,7 @@ export default function DebriefScreen({
             {/* whatThisMeans text */}
             <div style={{
               fontFamily: "'Barlow', sans-serif",
-              fontSize: 18, lineHeight: 1.65,
+              fontSize: 15, lineHeight: 1.65,
               color: 'rgba(255,255,255,0.78)',
               flexShrink: 0,
             }}>
@@ -914,7 +914,7 @@ export default function DebriefScreen({
             </div>
 
             {/* Table */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div className="raw-data-scroll" style={{ flex: 1, overflowY: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
