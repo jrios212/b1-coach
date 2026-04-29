@@ -59,3 +59,8 @@ input::placeholder { color: rgba(255,255,255,0.25); }
 .raw-data-scroll::-webkit-scrollbar-track { background: transparent; }
 .raw-data-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 .raw-data-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+.debrief-scroll::-webkit-scrollbar       { width: 3px; }
+.debrief-scroll::-webkit-scrollbar-track { background: transparent; }
+.debrief-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.debrief-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }

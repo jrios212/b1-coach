@@ -98,28 +98,6 @@ function RadarDecor() {
   )
 }
 
-// ── Status bar icons ───────────────────────────────────────────────────────
-function SignalIcon() {
-  return (
-    <svg width="16" height="11" viewBox="0 0 17 12" fill="none">
-      {[0, 1, 2, 3].map((i) => (
-        <rect key={i} x={i * 4} y={12 - (4 + i * 2.5)} width="3"
-          height={4 + i * 2.5} rx="0.7" fill="rgba(255,255,255,0.5)" />
-      ))}
-    </svg>
-  )
-}
-
-function BatteryIcon() {
-  return (
-    <svg width="15" height="11" viewBox="0 0 16 12" fill="none">
-      <rect x="0.5" y="0.5" width="13" height="11" rx="2" stroke="rgba(255,255,255,0.32)" />
-      <rect x="2" y="2" width="10" height="8" rx="1" fill="rgba(255,255,255,0.5)" />
-      <path d="M14.5 4v4c.8-.4 1.5-1.2 1.5-2s-.7-1.6-1.5-2z" fill="rgba(255,255,255,0.28)" />
-    </svg>
-  )
-}
-
 // ── Panel card ─────────────────────────────────────────────────────────────
 function Panel({ label, labelColor = 'rgba(255,255,255,0.5)', headerRight, children, style = {}, delay = 0 }) {
   return (
@@ -229,7 +207,7 @@ function ChartPlaceholder({ chart }) {
 }
 
 // ── Virtual Coach chat panel ───────────────────────────────────────────────
-function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessionContext, onChartSignal, nextSessionTips = [] }) {
+function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessionContext, onChartSignal }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
@@ -289,56 +267,11 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
     >
       {/* Message thread */}
       <div
-        className="chat-scroll"
+        className="chat-scroll debrief-scroll"
         style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 2 }}
       >
-        {/* Opening coach tips bubble when no messages and tips exist */}
-        {messages.length === 0 && !loading && nextSessionTips.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
-            <div style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700, fontSize: 10, letterSpacing: '0.04em',
-              color: ACCENT, paddingLeft: 2,
-            }}>
-              Coach
-            </div>
-            <div style={{
-              maxWidth: '94%', padding: '8px 11px',
-              borderRadius: '12px 12px 12px 4px',
-              background: `${ACCENT}15`,
-              border: `1px solid ${ACCENT}30`,
-              fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
-              color: 'rgba(255,255,255,0.9)',
-            }}>
-              <div style={{ marginBottom: 8 }}>Here are your top priorities for next session:</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {nextSessionTips.map((tip, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-                    <div style={{
-                      width: 18, height: 18, borderRadius: '50%',
-                      background: `${ACCENT}25`, border: `1.5px solid ${ACCENT}60`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0, marginTop: 2,
-                    }}>
-                      <span style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontWeight: 800, fontSize: 9, color: ACCENT,
-                      }}>{i + 1}</span>
-                    </div>
-                    <div style={{
-                      fontFamily: "'Barlow', sans-serif",
-                      fontSize: 14, lineHeight: 1.5,
-                      color: 'rgba(255,255,255,0.85)',
-                    }}>{tip}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Empty state when no messages and no tips */}
-        {messages.length === 0 && !loading && nextSessionTips.length === 0 && (
+        {/* Empty state when no messages */}
+        {messages.length === 0 && !loading && (
           <div style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexDirection: 'column', gap: 8, padding: '12px 0',
@@ -358,31 +291,78 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
           </div>
         )}
 
-        {messages.map((m, i) => (
-          <div key={i} style={{
-            display: 'flex', flexDirection: 'column', gap: 2,
-            alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
-          }}>
-            <div style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700, fontSize: 10, letterSpacing: '0.04em',
-              color: m.role === 'user' ? 'rgba(255,255,255,0.3)' : ACCENT,
-              paddingLeft: 2, paddingRight: 2, whiteSpace: 'nowrap',
+        {messages.map((m, i) => {
+          if (m.content === '__tips__') {
+            return (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+                <div style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 700, fontSize: 10, letterSpacing: '0.04em',
+                  color: ACCENT, paddingLeft: 2,
+                }}>
+                  Coach
+                </div>
+                <div style={{
+                  maxWidth: '94%', padding: '8px 11px',
+                  borderRadius: '12px 12px 12px 4px',
+                  background: `${ACCENT}15`,
+                  border: `1px solid ${ACCENT}30`,
+                  fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
+                  color: 'rgba(255,255,255,0.9)',
+                }}>
+                  <div style={{ marginBottom: 8 }}>Here are your top priorities for next session:</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {(m.tips ?? []).map((tip, j) => (
+                      <div key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                        <div style={{
+                          width: 18, height: 18, borderRadius: '50%',
+                          background: `${ACCENT}25`, border: `1.5px solid ${ACCENT}60`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0, marginTop: 2,
+                        }}>
+                          <span style={{
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontWeight: 800, fontSize: 9, color: ACCENT,
+                          }}>{j + 1}</span>
+                        </div>
+                        <div style={{
+                          fontFamily: "'Barlow', sans-serif",
+                          fontSize: 14, lineHeight: 1.5,
+                          color: 'rgba(255,255,255,0.85)',
+                        }}>{tip}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          return (
+            <div key={i} style={{
+              display: 'flex', flexDirection: 'column', gap: 2,
+              alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
             }}>
-              {m.role === 'user' ? 'You' : 'Coach'}
+              <div style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 700, fontSize: 10, letterSpacing: '0.04em',
+                color: m.role === 'user' ? 'rgba(255,255,255,0.3)' : ACCENT,
+                paddingLeft: 2, paddingRight: 2, whiteSpace: 'nowrap',
+              }}>
+                {m.role === 'user' ? 'You' : 'Coach'}
+              </div>
+              <div style={{
+                maxWidth: '94%', padding: '7px 10px',
+                borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                background: m.role === 'user' ? 'rgba(255,255,255,0.08)' : `${ACCENT}15`,
+                border: m.role === 'user' ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${ACCENT}30`,
+                fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
+                color: m.role === 'user' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.9)',
+              }}>
+                {m.content}
+              </div>
             </div>
-            <div style={{
-              maxWidth: '94%', padding: '7px 10px',
-              borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-              background: m.role === 'user' ? 'rgba(255,255,255,0.08)' : `${ACCENT}15`,
-              border: m.role === 'user' ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${ACCENT}30`,
-              fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
-              color: m.role === 'user' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.9)',
-            }}>
-              {m.content}
-            </div>
-          </div>
-        ))}
+          )
+        })}
 
         {loading && (
           <div style={{ display: 'flex', gap: 4, padding: '4px 2px' }}>
@@ -414,7 +394,7 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
               flex: 1, background: 'transparent',
               border: 'none', outline: 'none',
               fontFamily: "'Barlow', sans-serif",
-              fontSize: 12.5, color: 'rgba(255,255,255,0.85)',
+              fontSize: 14, color: 'rgba(255,255,255,0.85)',
             }}
           />
           <button
@@ -449,7 +429,6 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
 //   sessionData      — { avgExitVelocity, avgLaunchAngle, inZoneCount, totalSwings }
 //   coachingSummary  — string for the Session Summary body (from Anthropic API)
 //   whatThisMeans    — string for the What This Means body (from Anthropic API)
-//   nextSessionTips  — array of up to 3 strings (from Anthropic API)
 //   charts           — array of { type, data } objects (up to 2); rendered as placeholders
 //   sessions         — array of session numbers available, e.g. [1, 2, 3]
 //   onSessionToggle  — callback(sessionNumber)
@@ -464,7 +443,6 @@ export default function DebriefScreen({
   sessionData = null,
   coachingSummary = null,
   whatThisMeans = null,
-  nextSessionTips = [],
   charts = [],
   sessions = [],
   onSessionToggle,
@@ -479,17 +457,8 @@ export default function DebriefScreen({
   rawSwings = [],
   topEV = null,
 }) {
-  const [time, setTime] = useState('')
   const [revealed, setRevealed] = useState(false)
   const [showRawData, setShowRawData] = useState(false)
-
-  useEffect(() => {
-    const tick = () =>
-      setTime(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))
-    tick()
-    const id = setInterval(tick, 10000)
-    return () => clearInterval(id)
-  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setRevealed(true), 60)
@@ -546,24 +515,10 @@ export default function DebriefScreen({
     }}>
       <RadarDecor />
 
-      {/* Status bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 24px 5px',
-        fontFamily: "'Barlow', sans-serif", fontSize: 12,
-        color: 'rgba(255,255,255,0.38)', flexShrink: 0,
-      }}>
-        <span>{time}</span>
-        <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-          <SignalIcon />
-          <BatteryIcon />
-        </div>
-      </div>
-
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center',
-        padding: '3px 24px 9px', gap: 14, flexShrink: 0,
+        padding: '11px 24px 9px', gap: 14, flexShrink: 0,
         animation: revealed ? 'fadeUp 0.4s ease both' : 'none',
       }}>
         <div
@@ -704,9 +659,9 @@ export default function DebriefScreen({
             style={{ flex: 1 }}
           >
             {/* coachingSummary */}
-            <div style={{
+            <div className="debrief-scroll" style={{
               fontFamily: "'Barlow', sans-serif",
-              fontSize: 15, lineHeight: 1.6,
+              fontSize: 16, lineHeight: 1.6,
               color: 'rgba(255,255,255,0.78)',
               flex: 1, overflowY: 'auto', minHeight: 0,
             }}>
@@ -717,18 +672,12 @@ export default function DebriefScreen({
               )}
             </div>
 
-            {/* Divider */}
-            <div style={{
-              height: 1, background: 'rgba(255,255,255,0.08)',
-              margin: '12px 0', flexShrink: 0,
-            }} />
-
             {/* What This Means secondary label */}
             <div style={{
               fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700, fontSize: 13, letterSpacing: '0.08em',
+              fontWeight: 700, fontSize: 17, letterSpacing: '0.08em',
               textTransform: 'uppercase', color: ACCENT,
-              marginBottom: 6, flexShrink: 0,
+              marginTop: 10, marginBottom: 6, flexShrink: 0,
             }}>
               What This Means
             </div>
@@ -736,7 +685,7 @@ export default function DebriefScreen({
             {/* whatThisMeans text */}
             <div style={{
               fontFamily: "'Barlow', sans-serif",
-              fontSize: 15, lineHeight: 1.65,
+              fontSize: 16, lineHeight: 1.65,
               color: 'rgba(255,255,255,0.78)',
               flexShrink: 0,
             }}>
@@ -749,7 +698,7 @@ export default function DebriefScreen({
           </Panel>
 
           {/* BOTTOM PANELS — chart placeholders */}
-          <div style={{ flexShrink: 0, display: 'flex', gap: GAP, height: 220 }}>
+          <div style={{ flexShrink: 0, display: 'flex', gap: GAP, height: 280 }}>
             {chartSlots.map((chart, i) => {
               const label = chart?.type
                 ? chart.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -809,7 +758,6 @@ export default function DebriefScreen({
             delay={0.32}
             sessionContext={sessionContext}
             onChartSignal={onChartSignal}
-            nextSessionTips={nextSessionTips}
           />
         </div>
       </div>

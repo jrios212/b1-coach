@@ -447,58 +447,17 @@ function RadarDecor() {
   )
 }
 
-// ── Status bar icons ───────────────────────────────────────────────────────
-function SignalIcon() {
-  return (
-    <svg width="16" height="11" viewBox="0 0 17 12" fill="none">
-      {[0, 1, 2, 3].map((i) => (
-        <rect
-          key={i}
-          x={i * 4}
-          y={12 - (4 + i * 2.5)}
-          width="3"
-          height={4 + i * 2.5}
-          rx="0.7"
-          fill="rgba(255,255,255,0.5)"
-        />
-      ))}
-    </svg>
-  )
-}
-
-function BatteryIcon() {
-  return (
-    <svg width="15" height="11" viewBox="0 0 16 12" fill="none">
-      <rect x="0.5" y="0.5" width="13" height="11" rx="2" stroke="rgba(255,255,255,0.32)" />
-      <rect x="2" y="2" width="10" height="8" rx="1" fill="rgba(255,255,255,0.5)" />
-      <path d="M14.5 4v4c.8-.4 1.5-1.2 1.5-2s-.7-1.6-1.5-2z" fill="rgba(255,255,255,0.28)" />
-    </svg>
-  )
-}
-
 // ── Goal Selection Screen ──────────────────────────────────────────────────
 // Props:
 //   player   — object from TrackMan API: { firstName, lastName } or null while loading
 //   onSelect — callback(goalId) called immediately when a card is clicked
 function GoalSelectionScreen({ player = null, onSelect }) {
   const [revealed, setRevealed] = useState(false)
-  const [time, setTime] = useState('')
 
   // Stagger-in animation trigger
   useEffect(() => {
     const t = setTimeout(() => setRevealed(true), 60)
     return () => clearTimeout(t)
-  }, [])
-
-  // Live clock
-  useEffect(() => {
-    const tick = () =>
-      setTime(
-        new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-      )
-    tick()
-    const id = setInterval(tick, 10000)
-    return () => clearInterval(id)
   }, [])
 
   // Player display values — empty state until TrackMan API provides data
@@ -524,32 +483,12 @@ function GoalSelectionScreen({ player = null, onSelect }) {
     >
       <RadarDecor />
 
-      {/* Status bar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 28px 6px',
-          fontFamily: "'Barlow', sans-serif",
-          fontSize: 12,
-          color: 'rgba(255,255,255,0.38)',
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ fontWeight: 500 }}>{time}</span>
-        <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-          <SignalIcon />
-          <BatteryIcon />
-        </div>
-      </div>
-
       {/* Header row: logo | divider | headline | avatar */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          padding: '6px 28px 10px',
+          padding: '16px 28px 10px',
           gap: 24,
           flexShrink: 0,
           animation: revealed ? 'fadeUp 0.45s ease both' : 'none',
@@ -784,6 +723,15 @@ export default function App() {
     })
       .then((result) => {
         setDebriefContent(result)
+        if (result.nextSessionTips?.length > 0) {
+          setSessionHistory((prev) =>
+            prev.map((s) =>
+              s.sessionNumber === sessionNumber
+                ? { ...s, messages: [{ role: 'coach', content: '__tips__', tips: result.nextSessionTips }] }
+                : s
+            )
+          )
+        }
         setScreen('debrief')
       })
       .catch(() => {
@@ -934,7 +882,6 @@ export default function App() {
           sessionData={viewed?.stats ?? null}
           coachingSummary={debriefContent?.coachingSummary ?? null}
           whatThisMeans={debriefContent?.whatThisMeans ?? null}
-          nextSessionTips={debriefContent?.nextSessionTips ?? []}
           charts={debriefContent?.charts ?? []}
           sessions={sessions}
           onSessionToggle={(num) => setViewingSession(num)}

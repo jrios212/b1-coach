@@ -263,28 +263,6 @@ function SwingTicker({ swings }) {
   )
 }
 
-// ── Status bar icons ───────────────────────────────────────────────────────
-function SignalIcon() {
-  return (
-    <svg width="16" height="11" viewBox="0 0 17 12" fill="none">
-      {[0, 1, 2, 3].map((i) => (
-        <rect key={i} x={i * 4} y={12 - (4 + i * 2.5)} width="3"
-          height={4 + i * 2.5} rx="0.7" fill="rgba(255,255,255,0.5)" />
-      ))}
-    </svg>
-  )
-}
-
-function BatteryIcon() {
-  return (
-    <svg width="15" height="11" viewBox="0 0 16 12" fill="none">
-      <rect x="0.5" y="0.5" width="13" height="11" rx="2" stroke="rgba(255,255,255,0.32)" />
-      <rect x="2" y="2" width="10" height="8" rx="1" fill="rgba(255,255,255,0.5)" />
-      <path d="M14.5 4v4c.8-.4 1.5-1.2 1.5-2s-.7-1.6-1.5-2z" fill="rgba(255,255,255,0.28)" />
-    </svg>
-  )
-}
-
 // ── Live Session Screen ────────────────────────────────────────────────────
 // Props:
 //   player          — { firstName, lastName } from TrackMan API, or null while loading
@@ -303,18 +281,8 @@ export default function LiveSessionScreen({
   onHome = null,
   onEndSession = null,
 }) {
-  const [time, setTime] = useState('')
   const [revealed, setRevealed] = useState(false)
   const [visibleCount, setVisibleCount] = useState(0)
-
-  // Live clock
-  useEffect(() => {
-    const tick = () =>
-      setTime(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))
-    tick()
-    const id = setInterval(tick, 10000)
-    return () => clearInterval(id)
-  }, [])
 
   // Stagger-in trigger
   useEffect(() => {
@@ -366,25 +334,10 @@ export default function LiveSessionScreen({
         pointerEvents: 'none', zIndex: 0,
       }} />
 
-      {/* Status bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 24px 5px',
-        fontFamily: "'Barlow', sans-serif", fontSize: 12,
-        color: 'rgba(255,255,255,0.38)',
-        flexShrink: 0, position: 'relative', zIndex: 1,
-      }}>
-        <span>{time}</span>
-        <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-          <SignalIcon />
-          <BatteryIcon />
-        </div>
-      </div>
-
       {/* Header: logo | divider | avatar + name/session | spacer | goal pill */}
       <div style={{
         display: 'flex', alignItems: 'center',
-        padding: '3px 24px 9px', gap: 14,
+        padding: '11px 24px 9px', gap: 14,
         flexShrink: 0, position: 'relative', zIndex: 1,
         animation: revealed ? 'fadeUp 0.45s ease both' : 'none',
       }}>
