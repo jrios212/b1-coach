@@ -77,7 +77,7 @@ async function callApi(body) {
   }
 
   try {
-    const clean = text.replace(/```json\n?|\n?```/g, '').trim()
+    const clean = text.replace(/^[\s\S]*?```json\s*/,'').replace(/\s*```[\s\S]*$/,'').trim()
     return JSON.parse(clean)
   } catch {
     throw new Error('Failed to parse coach response as JSON')
