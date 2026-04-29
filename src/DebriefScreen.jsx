@@ -645,7 +645,7 @@ export default function DebriefScreen({
               fontFamily: "'Barlow', sans-serif",
               fontSize: 18, lineHeight: 1.6,
               color: 'rgba(255,255,255,0.78)',
-              flex: 1,
+              flex: 1, overflowY: 'auto', minHeight: 0,
             }}>
               {coachingSummary ?? (
                 <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
@@ -710,7 +710,7 @@ export default function DebriefScreen({
             {/* Try This Next Session */}
             <Panel label="Try This Next Session" labelColor={ACCENT} delay={0.2} style={{ flex: 1 }}>
               {nextSessionTips.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9, overflowY: 'auto', minHeight: 0 }}>
                   {nextSessionTips.slice(0, 3).map((tip, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                       {/* Numbered badge */}
