@@ -4,11 +4,8 @@ import { sendChatMessage } from './coachApi'
 const ACCENT = '#FF6B1A'
 const GOLD   = '#F5A623'
 
-// Layout constants (screen px, same proportions as design)
 const PAD = 14
 const GAP = 8
-const LEFT_W = 290   // Session Summary column + Chat column
-const TOP_H  = 352   // top section fixed height
 
 // ── TrackMan logo ──────────────────────────────────────────────────────────
 function TMLogo() {
@@ -203,7 +200,6 @@ function ChartPlaceholder({ chart }) {
       alignItems: 'center', justifyContent: 'center',
       gap: 10, minHeight: 0,
     }}>
-      {/* Placeholder grid */}
       <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', inset: 0, pointerEvents: 'none' }}
         viewBox="0 0 200 120" preserveAspectRatio="none">
         {[20, 40, 60, 80].map((y) => (
@@ -233,7 +229,7 @@ function ChartPlaceholder({ chart }) {
 }
 
 // ── Virtual Coach chat panel ───────────────────────────────────────────────
-function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessionContext, onChartSignal }) {
+function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessionContext, onChartSignal, nextSessionTips = [] }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
@@ -289,14 +285,60 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
       labelColor={ACCENT}
       headerRight={expandIcon}
       delay={delay}
-      style={{ flex: `0 0 ${LEFT_W}px`, width: LEFT_W }}
+      style={{ flex: 1, width: '100%' }}
     >
       {/* Message thread */}
       <div
         className="chat-scroll"
         style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 2 }}
       >
-        {messages.length === 0 && !loading && (
+        {/* Opening coach tips bubble when no messages and tips exist */}
+        {messages.length === 0 && !loading && nextSessionTips.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+            <div style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 700, fontSize: 10, letterSpacing: '0.04em',
+              color: ACCENT, paddingLeft: 2,
+            }}>
+              Coach
+            </div>
+            <div style={{
+              maxWidth: '94%', padding: '8px 11px',
+              borderRadius: '12px 12px 12px 4px',
+              background: `${ACCENT}15`,
+              border: `1px solid ${ACCENT}30`,
+              fontFamily: "'Barlow', sans-serif", fontSize: 12.5, lineHeight: 1.5,
+              color: 'rgba(255,255,255,0.9)',
+            }}>
+              <div style={{ marginBottom: 8 }}>Here are your top priorities for next session:</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {nextSessionTips.map((tip, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: '50%',
+                      background: `${ACCENT}25`, border: `1.5px solid ${ACCENT}60`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, marginTop: 2,
+                    }}>
+                      <span style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 800, fontSize: 9, color: ACCENT,
+                      }}>{i + 1}</span>
+                    </div>
+                    <div style={{
+                      fontFamily: "'Barlow', sans-serif",
+                      fontSize: 12.5, lineHeight: 1.5,
+                      color: 'rgba(255,255,255,0.85)',
+                    }}>{tip}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state when no messages and no tips */}
+        {messages.length === 0 && !loading && nextSessionTips.length === 0 && (
           <div style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexDirection: 'column', gap: 8, padding: '12px 0',
@@ -412,6 +454,8 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
 //   sessions         — array of session numbers available, e.g. [1, 2, 3]
 //   onSessionToggle  — callback(sessionNumber)
 //   onExpandChat     — callback for the expand icon in the Virtual Coach panel
+//   rawSwings        — array of swing objects for the Raw Data modal
+//   topEV            — number, max exit velocity from the session
 export default function DebriefScreen({
   player = null,
   sessionNumber = null,
@@ -432,9 +476,12 @@ export default function DebriefScreen({
   sessionCapReached = false,
   sessionContext = null,
   onChartSignal = null,
+  rawSwings = [],
+  topEV = null,
 }) {
   const [time, setTime] = useState('')
   const [revealed, setRevealed] = useState(false)
+  const [showRawData, setShowRawData] = useState(false)
 
   useEffect(() => {
     const tick = () =>
@@ -465,6 +512,30 @@ export default function DebriefScreen({
 
   // Normalize charts array to exactly 2 slots for the bottom row
   const chartSlots = [charts[0] ?? null, charts[1] ?? null]
+
+  const headerButtonStyle = {
+    display: 'flex', alignItems: 'center', gap: 6,
+    height: 28, paddingInline: 12, borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.06)',
+    color: 'rgba(255,255,255,0.45)',
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 700, fontSize: 13, letterSpacing: '0.06em',
+    textTransform: 'uppercase', cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+  }
+
+  const headerButtonEnter = (e) => {
+    e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+    e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
+    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'
+  }
+
+  const headerButtonLeave = (e) => {
+    e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+    e.currentTarget.style.color = 'rgba(255,255,255,0.45)'
+    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
+  }
 
   return (
     <div style={{
@@ -571,27 +642,9 @@ export default function DebriefScreen({
         ) : onNewSession ? (
           <button
             onClick={onNewSession}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              height: 28, paddingInline: 12, borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.06)',
-              color: 'rgba(255,255,255,0.45)',
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700, fontSize: 13, letterSpacing: '0.06em',
-              textTransform: 'uppercase', cursor: 'pointer',
-              transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
-              e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
-              e.currentTarget.style.color = 'rgba(255,255,255,0.45)'
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
-            }}
+            style={headerButtonStyle}
+            onMouseEnter={headerButtonEnter}
+            onMouseLeave={headerButtonLeave}
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
               <path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -601,6 +654,16 @@ export default function DebriefScreen({
         ) : null}
 
         <div style={{ flex: 1 }} />
+
+        {/* Raw Data button */}
+        <button
+          onClick={() => setShowRawData(true)}
+          style={headerButtonStyle}
+          onMouseEnter={headerButtonEnter}
+          onMouseLeave={headerButtonLeave}
+        >
+          Raw Data
+        </button>
 
         {/* Goal pill */}
         {goalId && goalLabel && (
@@ -624,23 +687,23 @@ export default function DebriefScreen({
       {/* Divider */}
       <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
 
-      {/* ── Content grid ── */}
+      {/* ── Content grid — two columns ── */}
       <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column',
+        flex: 1, display: 'flex',
         padding: PAD, gap: GAP, minHeight: 0,
       }}>
 
-        {/* ── Top row ── */}
-        <div style={{ display: 'flex', gap: GAP, height: TOP_H, flexShrink: 0 }}>
+        {/* LEFT COLUMN — 60% */}
+        <div style={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', gap: GAP }}>
 
-          {/* Session Summary */}
+          {/* TOP PANEL — Session Summary + What This Means */}
           <Panel
             label="Session Summary"
             labelColor={ACCENT}
             delay={0.08}
-            style={{ width: LEFT_W, flexShrink: 0 }}
+            style={{ flex: 1 }}
           >
-            {/* Body text */}
+            {/* coachingSummary */}
             <div style={{
               fontFamily: "'Barlow', sans-serif",
               fontSize: 18, lineHeight: 1.6,
@@ -654,157 +717,281 @@ export default function DebriefScreen({
               )}
             </div>
 
-            {/* Stat pills — highlight thresholds keyed to goalId */}
-            {(() => {
-              const h = goalId === 'power'
-                ? {
-                    ev:     avgEV  != null && avgEV  >= 88,
-                    la:     avgLA  != null && avgLA  >= 25,
-                    inZone: inZone != null && inZone >= 8,
-                  }
-                : { ev: false, la: false, inZone: false }
+            {/* Divider */}
+            <div style={{
+              height: 1, background: 'rgba(255,255,255,0.08)',
+              margin: '12px 0', flexShrink: 0,
+            }} />
 
-              return (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', flexShrink: 0, paddingTop: 10 }}>
-                  <StatPill
-                    label="Avg EV"
-                    value={avgEV ?? '—'}
-                    unit={avgEV != null ? ' mph' : ''}
-                    highlight={h.ev}
-                  />
-                  <StatPill
-                    label="Avg LA"
-                    value={avgLA ?? '—'}
-                    unit={avgLA != null ? '°' : ''}
-                    highlight={h.la}
-                  />
-                  <StatPill
-                    label="In Zone"
-                    value={inZone ?? '—'}
-                    unit={total != null && inZone != null ? `/${total}` : ''}
-                    highlight={h.inZone}
-                  />
-                </div>
-              )
-            })()}
+            {/* What This Means secondary label */}
+            <div style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 700, fontSize: 13, letterSpacing: '0.08em',
+              textTransform: 'uppercase', color: ACCENT,
+              marginBottom: 6, flexShrink: 0,
+            }}>
+              What This Means
+            </div>
+
+            {/* whatThisMeans text */}
+            <div style={{
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 18, lineHeight: 1.65,
+              color: 'rgba(255,255,255,0.78)',
+              flexShrink: 0,
+            }}>
+              {whatThisMeans ?? (
+                <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
+                  Coaching context will appear here once generated.
+                </span>
+              )}
+            </div>
           </Panel>
 
-          {/* Right column — stacked panels */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: GAP }}>
+          {/* BOTTOM PANELS — chart placeholders */}
+          <div style={{ flexShrink: 0, display: 'flex', gap: GAP, height: 220 }}>
+            {chartSlots.map((chart, i) => {
+              const label = chart?.type
+                ? chart.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                : i === 0 ? 'Launch Angle vs Exit Velocity' : 'Distance Distribution'
 
-            {/* What This Means */}
-            <Panel label="What This Means" labelColor={GOLD} delay={0.14} style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: "'Barlow', sans-serif",
-                fontSize: 18, lineHeight: 1.65,
-                color: 'rgba(255,255,255,0.78)',
-              }}>
-                {whatThisMeans ?? (
-                  <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
-                    Coaching context will appear here once generated.
-                  </span>
-                )}
-              </div>
-            </Panel>
-
-            {/* Try This Next Session */}
-            <Panel label="Try This Next Session" labelColor={ACCENT} delay={0.2} style={{ flex: 1 }}>
-              {nextSessionTips.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 9, overflowY: 'auto', minHeight: 0 }}>
-                  {nextSessionTips.slice(0, 3).map((tip, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                      {/* Numbered badge */}
-                      <div style={{
-                        width: 20, height: 20, borderRadius: 6, flexShrink: 0,
-                        background: `${ACCENT}20`, border: `1px solid ${ACCENT}35`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontWeight: 800, fontSize: 12, color: ACCENT,
-                        marginTop: 1,
-                      }}>
-                        {i + 1}
-                      </div>
-                      <div style={{
-                        flex: 1,
-                        fontFamily: "'Barlow', sans-serif",
-                        fontSize: 18, lineHeight: 1.4,
-                        color: 'rgba(255,255,255,0.76)',
-                      }}>
-                        {tip}
-                      </div>
+              return (
+                <Panel
+                  key={i}
+                  label={label}
+                  labelColor={ACCENT}
+                  delay={0.36 + i * 0.04}
+                  style={{ flex: 1 }}
+                >
+                  <div style={{
+                    flex: 1, display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center',
+                    position: 'relative', minHeight: 0, gap: 8,
+                  }}>
+                    <svg
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }}
+                      preserveAspectRatio="none"
+                      viewBox="0 0 200 120"
+                    >
+                      {[25, 50, 75, 100].map((y) => (
+                        <line key={y} x1="0" y1={y} x2="200" y2={y} stroke="white" strokeWidth="0.8" />
+                      ))}
+                      {[50, 100, 150].map((x) => (
+                        <line key={x} x1={x} y1="0" x2={x} y2="120" stroke="white" strokeWidth="0.8" />
+                      ))}
+                    </svg>
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ opacity: 0.2 }}>
+                      <rect x="3" y="3" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+                      <rect x="18" y="3" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+                      <rect x="3" y="18" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+                      <rect x="18" y="18" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+                    </svg>
+                    <div style={{
+                      fontFamily: "'Barlow', sans-serif",
+                      fontSize: 11, color: 'rgba(255,255,255,0.18)',
+                      textAlign: 'center', position: 'relative',
+                    }}>
+                      Chart renders here
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  fontFamily: "'Barlow', sans-serif",
-                  fontSize: 13, color: 'rgba(255,255,255,0.2)',
-                  fontStyle: 'italic',
-                }}>
-                  Tips will appear here once generated.
-                </div>
-              )}
-            </Panel>
+                  </div>
+                </Panel>
+              )
+            })}
           </div>
         </div>
 
-        {/* ── Bottom row ── */}
-        <div style={{ display: 'flex', gap: GAP, flex: 1, minHeight: 0 }}>
-
-          {/* Virtual Coach chat */}
-          <ChatPanel messages={chatMessages} onMessagesChange={onChatUpdate} onExpandChat={onExpandChat} delay={0.32} sessionContext={sessionContext} onChartSignal={onChartSignal} />
-
-          {/* Chart slots */}
-          {chartSlots.map((chart, i) => {
-            const label = chart?.type
-              ? chart.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-              : i === 0 ? 'Launch Angle vs Exit Velocity' : 'Distance Distribution'
-
-            return (
-              <Panel
-                key={i}
-                label={label}
-                labelColor={ACCENT}
-                delay={0.36 + i * 0.04}
-                style={{ flex: 1 }}
-              >
-                <div style={{
-                  flex: 1, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  position: 'relative', minHeight: 0, gap: 8,
-                }}>
-                  {/* Subtle grid */}
-                  <svg
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }}
-                    preserveAspectRatio="none"
-                    viewBox="0 0 200 120"
-                  >
-                    {[25, 50, 75, 100].map((y) => (
-                      <line key={y} x1="0" y1={y} x2="200" y2={y} stroke="white" strokeWidth="0.8" />
-                    ))}
-                    {[50, 100, 150].map((x) => (
-                      <line key={x} x1={x} y1="0" x2={x} y2="120" stroke="white" strokeWidth="0.8" />
-                    ))}
-                  </svg>
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ opacity: 0.2 }}>
-                    <rect x="3" y="3" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-                    <rect x="18" y="3" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-                    <rect x="3" y="18" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-                    <rect x="18" y="18" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-                  </svg>
-                  <div style={{
-                    fontFamily: "'Barlow', sans-serif",
-                    fontSize: 11, color: 'rgba(255,255,255,0.18)',
-                    textAlign: 'center', position: 'relative',
-                  }}>
-                    Chart renders here
-                  </div>
-                </div>
-              </Panel>
-            )
-          })}
+        {/* RIGHT COLUMN — 40% */}
+        <div style={{ flex: '0 0 40%', display: 'flex', flexDirection: 'column' }}>
+          <ChatPanel
+            messages={chatMessages}
+            onMessagesChange={onChatUpdate}
+            onExpandChat={onExpandChat}
+            delay={0.32}
+            sessionContext={sessionContext}
+            onChartSignal={onChartSignal}
+            nextSessionTips={nextSessionTips}
+          />
         </div>
       </div>
+
+      {/* ── Footer stat bar ── */}
+      <div style={{ flexShrink: 0, height: 56, display: 'flex', gap: 1 }}>
+        {[
+          {
+            label: 'Avg EV',
+            value: avgEV != null ? `${avgEV} mph` : '—',
+            highlight: avgEV != null && avgEV >= 88,
+          },
+          {
+            label: 'Avg LA',
+            value: avgLA != null ? `${avgLA}°` : '—',
+            highlight: false,
+          },
+          {
+            label: 'In Zone',
+            value: inZone != null && total != null ? `${inZone}/${total}` : '—',
+            highlight: false,
+          },
+          {
+            label: 'Top EV',
+            value: topEV != null ? `${topEV} mph` : '—',
+            highlight: topEV != null && topEV >= 95,
+          },
+        ].map((tile) => (
+          <div
+            key={tile.label}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              background: tile.highlight ? `${ACCENT}18` : 'rgba(255,255,255,0.04)',
+            }}
+          >
+            <div style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 800, fontSize: 18, lineHeight: 1,
+              color: tile.highlight ? ACCENT : 'rgba(255,255,255,0.85)',
+            }}>
+              {tile.value}
+            </div>
+            <div style={{
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 10, color: 'rgba(255,255,255,0.35)',
+              marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em',
+            }}>
+              {tile.label}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Raw Data modal ── */}
+      {showRawData && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.75)',
+          zIndex: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            width: 680,
+            background: 'linear-gradient(160deg, #1c1e27 0%, #141518 60%, #111214 100%)',
+            border: '1.5px solid rgba(255,255,255,0.12)',
+            borderRadius: 16,
+            maxHeight: '80vh',
+            display: 'flex', flexDirection: 'column',
+            overflow: 'hidden',
+          }}>
+            {/* Modal header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '18px 24px 16px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              flexShrink: 0,
+            }}>
+              <div style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 800, fontSize: 18, letterSpacing: '0.06em',
+                textTransform: 'uppercase', color: ACCENT,
+              }}>
+                Raw Data · Session {sessionNumber}
+              </div>
+              <button
+                onClick={() => setShowRawData(false)}
+                style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M1 1l10 10M11 1L1 11" stroke="rgba(255,255,255,0.45)" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Table */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['#', 'Exit Velocity', 'Launch Angle', 'Direction', 'Distance'].map((col, i) => (
+                      <th
+                        key={col}
+                        style={{
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontWeight: 700, fontSize: 11, letterSpacing: '0.08em',
+                          textTransform: 'uppercase', color: ACCENT,
+                          padding: '11px 14px 10px',
+                          textAlign: i === 0 ? 'center' : 'right',
+                          borderBottom: '1.5px solid rgba(255,107,26,0.35)',
+                          ...(i === 0 ? { width: 56 } : {}),
+                        }}
+                      >
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rawSwings.map((swing, i) => {
+                    const ev   = swing.hit.launch.exitSpeed
+                    const la   = swing.hit.launch.angle
+                    const dir  = swing.hit.launch.direction
+                    const dist = swing.hit.landing.distance
+                    const inZoneRow = la >= 25 && la <= 35
+                    const rowBg = i % 2 === 1 ? 'rgba(255,255,255,0.02)' : 'transparent'
+                    const cellStyle = {
+                      padding: '9px 14px',
+                      textAlign: 'right',
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontSize: 16, fontWeight: 600,
+                      color: 'rgba(255,255,255,0.75)',
+                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                    }
+
+                    return (
+                      <tr key={i} style={{ background: rowBg }}>
+                        <td style={{
+                          ...cellStyle,
+                          textAlign: 'center',
+                          fontSize: 12, fontWeight: 700,
+                          color: 'rgba(255,255,255,0.28)',
+                        }}>
+                          {String(i + 1).padStart(2, '0')}
+                        </td>
+                        <td style={{ ...cellStyle, color: inZoneRow ? ACCENT : 'rgba(255,255,255,0.75)' }}>
+                          {ev} mph
+                        </td>
+                        <td style={cellStyle}>{la}°</td>
+                        <td style={cellStyle}>{dir > 0 ? '+' : ''}{dir}°</td>
+                        <td style={cellStyle}>{dist} ft</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal footer */}
+            <div style={{
+              flexShrink: 0,
+              padding: '11px 22px 14px',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              <div style={{
+                fontFamily: "'Barlow', sans-serif",
+                fontSize: 11, color: 'rgba(255,255,255,0.2)',
+              }}>
+                Data generated by TrackMan B1 · Session simulation
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

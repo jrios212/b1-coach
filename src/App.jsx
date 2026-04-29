@@ -912,6 +912,11 @@ export default function App() {
   if (screen === 'debrief') {
     const viewed = sessionHistory.find((s) => s.sessionNumber === viewingSession) ?? sessionHistory.at(-1)
 
+    const rawSwings = viewed?.swings ?? []
+    const topEV = viewed?.swings
+      ? Math.max(...viewed.swings.map(s => s.hit.launch.exitSpeed))
+      : null
+
     const sessionContext = {
       goal: selectedGoal,
       player,
@@ -961,6 +966,8 @@ export default function App() {
           }}
           sessionContext={sessionContext}
           onChartSignal={() => setScreen('conversation')}
+          rawSwings={rawSwings}
+          topEV={topEV}
         />
       </div>
     )
