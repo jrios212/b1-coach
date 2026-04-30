@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import LiveSessionScreen from './LiveSessionScreen'
 import DebriefScreen from './DebriefScreen'
 import ConversationScreen from './ConversationScreen'
-import { generateDebrief } from './coachApi'
+import { generateDebrief, sendChatMessage } from './coachApi'
 
 // ── Goal definitions ───────────────────────────────────────────────────────
 // These are the app's predefined coaching focus options.
@@ -672,6 +672,8 @@ export default function App() {
   const [debriefContent, setDebriefContent] = useState(null)
   const [conversationMessages, setConversationMessages] = useState([])
   const [conversationStats, setConversationStats] = useState(null)
+  const [conversationCharts, setConversationCharts] = useState([])
+  const [conversationLoading, setConversationLoading] = useState(false)
 
   const computeStats = (swings) => {
     const total = swings.length
@@ -897,6 +899,7 @@ export default function App() {
           onExpandChat={() => {
             setConversationMessages(viewed?.messages ?? [])
             setConversationStats(viewed?.stats ?? null)
+            setConversationCharts([])
             setScreen('conversation')
           }}
           onHome={handleHome}
@@ -925,6 +928,7 @@ export default function App() {
             if (chartKey) {
               setConversationMessages(currentMessages ?? [])
               setConversationStats(viewed?.stats ?? null)
+              setConversationCharts([])
               setScreen('conversation')
             }
           }}
@@ -943,14 +947,40 @@ export default function App() {
         goalId={selectedGoal?.id ?? 'power'}
         goalLabel={selectedGoal?.label ?? 'Power & Home Runs'}
         messages={conversationMessages}
-        charts={debriefContent?.charts?.map((key) => ({ type: key })) ?? []}
+        charts={[
+          ...(debriefContent?.charts?.map((key) => ({ type: key })) ?? []),
+          ...conversationCharts.filter((c) => !debriefContent?.charts?.includes(c.type)),
+        ]}
         sessionStats={conversationStats}
         topEV={conversationStats ? Math.max(...(sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings.map((s) => s.hit.launch.exitSpeed) ?? [0])) : null}
         swings={sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings ?? []}
-        onSendMessage={(msg) => console.log('send:', msg)}
+        onSendMessage={async (msg) => {
+          const updatedMessages = [...conversationMessages, { role: 'user', content: msg }]
+          setConversationMessages(updatedMessages)
+          setConversationLoading(true)
+          try {
+            const result = await sendChatMessage({
+              goal: selectedGoal,
+              player,
+              sessions: sessionHistory.filter((s) => s.sessionNumber <= (viewingSession ?? sessionNumber)),
+              viewingSessionNumber: viewingSession ?? sessionNumber,
+              messages: updatedMessages,
+            })
+            const finalMessages = [...updatedMessages, { role: 'coach', content: result.message }]
+            setConversationMessages(finalMessages)
+            if (result.chart) {
+              setConversationCharts((prev) => {
+                if (prev.find((c) => c.type === result.chart)) return prev
+                return [...prev, { type: result.chart }]
+              })
+            }
+          } finally {
+            setConversationLoading(false)
+          }
+        }}
         onCollapse={() => setScreen('debrief')}
         onHome={handleHome}
-        isLoading={false}
+        isLoading={conversationLoading}
       />
     </div>
   )
