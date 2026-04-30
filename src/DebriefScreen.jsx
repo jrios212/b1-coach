@@ -579,6 +579,107 @@ function BarDistance({ swings }) {
   )
 }
 
+// ── Spray direction chart (custom SVG) ────────────────────────────────────
+function SprayDirection({ swings }) {
+  const cx = 150
+  const cy = 200
+
+  // Arc helpers
+  const arcPoint = (angleDeg, r) => {
+    const rad = (angleDeg * Math.PI) / 180
+    return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) }
+  }
+
+  const arcPath = (r) => {
+    const l = arcPoint(-45, r)
+    const rp = arcPoint(45, r)
+    return `M ${l.x} ${l.y} A ${r} ${r} 0 0 1 ${rp.x} ${rp.y}`
+  }
+
+  const leftLine  = arcPoint(-45, 190)
+  const rightLine = arcPoint(45, 190)
+
+  // Fair territory fill path
+  const fairPath = [
+    `M ${cx} ${cy}`,
+    `L ${leftLine.x} ${leftLine.y}`,
+    `A 190 190 0 0 1 ${rightLine.x} ${rightLine.y}`,
+    'Z',
+  ].join(' ')
+
+  // Distance label positions
+  const infieldLabel  = arcPoint(0, 120)
+  const outfieldLabel = arcPoint(0, 178)
+
+  // Shape renderers for each hit type
+  const renderShape = (x, y, dir, i) => {
+    if (dir < -15) {
+      return <circle key={i} cx={x} cy={y} r={5} fill="#FF6B1A" fillOpacity={0.8} />
+    }
+    if (dir > 15) {
+      // Triangle pointing up: vertices relative to (x, y)
+      const pts = `${x},${y - 6} ${x - 5},${y + 4} ${x + 5},${y + 4}`
+      return <polygon key={i} points={pts} fill="rgba(180,180,255,0.8)" fillOpacity={0.8} />
+    }
+    // Diamond: square rotated 45°
+    return (
+      <rect
+        key={i}
+        x={x - 4} y={y - 4}
+        width={8} height={8}
+        fill="rgba(255,200,100,0.8)"
+        fillOpacity={0.8}
+        transform={`rotate(45, ${x}, ${y})`}
+      />
+    )
+  }
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <svg width="100%" height="100%" viewBox="0 0 300 222" preserveAspectRatio="xMidYMid meet">
+
+        {/* Fair territory fill */}
+        <path d={fairPath} fill="rgba(255,255,255,0.03)" />
+
+        {/* Foul lines */}
+        <line x1={cx} y1={cy} x2={leftLine.x}  y2={leftLine.y}  stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <line x1={cx} y1={cy} x2={rightLine.x} y2={rightLine.y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+
+        {/* Infield arc */}
+        <path d={arcPath(120)} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+
+        {/* Outfield arc */}
+        <path d={arcPath(185)} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+
+        {/* Distance markers */}
+        <text x={infieldLabel.x}  y={infieldLabel.y  - 5} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Barlow, sans-serif">200ft</text>
+        <text x={outfieldLabel.x} y={outfieldLabel.y - 5} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Barlow, sans-serif">350ft+</text>
+
+        {/* Swing shapes */}
+        {swings.map((swing, i) => {
+          const dir  = swing.hit.launch.direction
+          const dist = swing.hit.landing.distance
+          const scale = Math.min(dist / 420, 1) * 140
+          const rad = (dir * Math.PI) / 180
+          const x = cx + scale * Math.sin(rad)
+          const y = cy - scale * Math.cos(rad)
+          return renderShape(x, y, dir, i)
+        })}
+
+        {/* Legend — groups centered in viewBox, 16px gap between items, 6px shape-to-label margin */}
+        <circle cx={86} cy={217} r={5} fill="#FF6B1A" fillOpacity={0.8} />
+        <text x={97} y={221} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Pull</text>
+
+        <rect x={129} y={213} width={8} height={8} fill="rgba(255,200,100,0.8)" fillOpacity={0.8} transform="rotate(45, 133, 217)" />
+        <text x={145} y={221} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Center</text>
+
+        <polygon points="192,212 187,221 197,221" fill="rgba(180,180,255,0.8)" fillOpacity={0.8} />
+        <text x={203} y={221} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Oppo</text>
+      </svg>
+    </div>
+  )
+}
+
 // ── Debrief Screen ─────────────────────────────────────────────────────────
 // Props:
 //   player           — { firstName, lastName } from TrackMan API, or null
@@ -878,6 +979,8 @@ export default function DebriefScreen({
                     <TrendEV swings={rawSwings} />
                   ) : chart?.type === 'bar_distance' ? (
                     <BarDistance swings={rawSwings} />
+                  ) : chart?.type === 'spray_direction' ? (
+                    <SprayDirection swings={rawSwings} />
                   ) : (
                     <div style={{
                       flex: 1, display: 'flex', flexDirection: 'column',

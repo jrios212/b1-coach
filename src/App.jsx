@@ -639,21 +639,21 @@ const NICKNAMES = [
 
 export default function App() {
   const mockSwings = [
-    { hit: { launch: { exitSpeed: 91, angle: 28, direction:  2 }, landing: { distance: 382 } } },
-    { hit: { launch: { exitSpeed: 87, angle: 15, direction: -5 }, landing: { distance: 305 } } },
-    { hit: { launch: { exitSpeed: 94, angle: 32, direction:  1 }, landing: { distance: 418 } } },
+    { hit: { launch: { exitSpeed: 91, angle: 28, direction:   2 }, landing: { distance: 382 } } },
+    { hit: { launch: { exitSpeed: 87, angle: 15, direction: -22 }, landing: { distance: 305 } } },
+    { hit: { launch: { exitSpeed: 94, angle: 32, direction:   1 }, landing: { distance: 418 } } },
     { hit: { launch: { exitSpeed: 82, angle:  8, direction: -12 }, landing: { distance: 268 } } },
-    { hit: { launch: { exitSpeed: 96, angle: 30, direction:  4 }, landing: { distance: 431 } } },
-    { hit: { launch: { exitSpeed: 89, angle: 22, direction: -3 }, landing: { distance: 352 } } },
-    { hit: { launch: { exitSpeed: 85, angle: 12, direction:  8 }, landing: { distance: 290 } } },
-    { hit: { launch: { exitSpeed: 93, angle: 35, direction:  0 }, landing: { distance: 408 } } },
-    { hit: { launch: { exitSpeed: 88, angle: 26, direction: -7 }, landing: { distance: 365 } } },
-    { hit: { launch: { exitSpeed: 90, angle: 18, direction:  6 }, landing: { distance: 335 } } },
-    { hit: { launch: { exitSpeed: 95, angle: 29, direction: -2 }, landing: { distance: 425 } } },
-    { hit: { launch: { exitSpeed: 83, angle:  5, direction: 15 }, landing: { distance: 255 } } },
-    { hit: { launch: { exitSpeed: 92, angle: 31, direction:  3 }, landing: { distance: 395 } } },
-    { hit: { launch: { exitSpeed: 86, angle: 20, direction: -9 }, landing: { distance: 320 } } },
-    { hit: { launch: { exitSpeed: 98, angle: 27, direction:  1 }, landing: { distance: 445 } } },
+    { hit: { launch: { exitSpeed: 96, angle: 30, direction:   4 }, landing: { distance: 431 } } },
+    { hit: { launch: { exitSpeed: 89, angle: 22, direction: -18 }, landing: { distance: 352 } } },
+    { hit: { launch: { exitSpeed: 85, angle: 12, direction:   8 }, landing: { distance: 290 } } },
+    { hit: { launch: { exitSpeed: 93, angle: 35, direction:   0 }, landing: { distance: 408 } } },
+    { hit: { launch: { exitSpeed: 88, angle: 26, direction:  25 }, landing: { distance: 365 } } },
+    { hit: { launch: { exitSpeed: 90, angle: 18, direction:   6 }, landing: { distance: 335 } } },
+    { hit: { launch: { exitSpeed: 95, angle: 29, direction:  -2 }, landing: { distance: 425 } } },
+    { hit: { launch: { exitSpeed: 83, angle:  5, direction:  15 }, landing: { distance: 255 } } },
+    { hit: { launch: { exitSpeed: 92, angle: 31, direction: -28 }, landing: { distance: 395 } } },
+    { hit: { launch: { exitSpeed: 86, angle: 20, direction:  20 }, landing: { distance: 320 } } },
+    { hit: { launch: { exitSpeed: 98, angle: 27, direction:   1 }, landing: { distance: 445 } } },
   ]
 
   const [screen, setScreen] = useState('goal')
