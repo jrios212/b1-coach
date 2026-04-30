@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { sendChatMessage } from './coachApi'
 import {
-  ScatterChart, Scatter, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  ScatterChart, Scatter, LineChart, Line, BarChart, Bar, LabelList,
+  XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Cell,
 } from 'recharts'
 
@@ -501,6 +502,83 @@ function TrendEV({ swings }) {
   )
 }
 
+// ── Distance distribution bar chart ───────────────────────────────────────
+function BarDistance({ swings }) {
+  const buckets = [
+    { range: '160-220', min: 160, max: 220 },
+    { range: '220-260', min: 220, max: 260 },
+    { range: '260-300', min: 260, max: 300 },
+    { range: '300-340', min: 300, max: 340 },
+    { range: '340+',    min: 340, max: Infinity },
+  ]
+
+  const data = buckets.map(({ range, min, max }) => ({
+    range,
+    count: swings.filter((s) => {
+      const dist = s.hit.landing.distance
+      return dist >= min && dist < max
+    }).length,
+  }))
+
+  const maxCount = Math.max(...data.map((d) => d.count))
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+          <XAxis
+            dataKey="range"
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9, fontFamily: 'Barlow, sans-serif' }}
+            label={{
+              value: 'DISTANCE (FT)',
+              position: 'insideBottom',
+              offset: -15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" },
+            }}
+          />
+          <YAxis
+            dataKey="count"
+            allowDecimals={false}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{
+              value: 'SWINGS',
+              angle: -90,
+              position: 'insideLeft',
+              offset: 15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" },
+            }}
+          />
+          <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell
+                key={i}
+                fill={entry.count === maxCount ? '#FF6B1A' : 'rgba(255,107,26,0.35)'}
+              />
+            ))}
+            <LabelList
+              dataKey="count"
+              position="top"
+              style={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: 'Barlow Condensed, sans-serif' }}
+            />
+          </Bar>
+          <Tooltip
+            cursor={false}
+            contentStyle={{
+              background: 'rgba(20,22,28,0.95)',
+              border: '1px solid rgba(255,107,26,0.3)',
+              borderRadius: 8,
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 12,
+            }}
+            formatter={(value) => [`${value}`, 'Swings']}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 // ── Debrief Screen ─────────────────────────────────────────────────────────
 // Props:
 //   player           — { firstName, lastName } from TrackMan API, or null
@@ -798,6 +876,8 @@ export default function DebriefScreen({
                     <ScatterEVLA swings={rawSwings} />
                   ) : chart?.type === 'trend_ev' ? (
                     <TrendEV swings={rawSwings} />
+                  ) : chart?.type === 'bar_distance' ? (
+                    <BarDistance swings={rawSwings} />
                   ) : (
                     <div style={{
                       flex: 1, display: 'flex', flexDirection: 'column',
