@@ -207,7 +207,7 @@ function ChartPlaceholder({ chart }) {
 }
 
 // ── Virtual Coach chat panel ───────────────────────────────────────────────
-function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessionContext, onChartSignal }) {
+function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessionContext, onChartSignal = null }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
@@ -225,10 +225,11 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
     setLoading(true)
     sendChatMessage({ ...sessionContext, messages: updatedMessages })
       .then((result) => {
-        onMessagesChange?.([...updatedMessages, { role: 'coach', content: result.message }])
+        const finalMessages = [...updatedMessages, { role: 'coach', content: result.message }]
+        onMessagesChange?.(finalMessages)
         setLoading(false)
         if (result.chart) {
-          onChartSignal?.(result.chart)
+          onChartSignal?.(result.chart, finalMessages)
         }
       })
       .catch(() => {

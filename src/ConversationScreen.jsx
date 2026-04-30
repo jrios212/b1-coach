@@ -246,6 +246,7 @@ export default function ConversationScreen({
   onCollapse,
   isLoading = false,
   topEV = null,
+  onHome = null,
 }) {
   const [text, setText] = useState('')
   const [revealed, setRevealed] = useState(false)
@@ -274,7 +275,7 @@ export default function ConversationScreen({
     ? `${player.firstName?.[0] ?? ''}${player.lastName?.[0] ?? ''}`.toUpperCase()
     : null
   const displayName = player
-    ? [player.firstName, player.lastName].filter(Boolean).join(' ')
+    ? [player.firstName, player.lastName].filter(Boolean).join(', ')
     : null
 
   // Session stats with fallbacks
@@ -291,6 +292,28 @@ export default function ConversationScreen({
     { chart: charts[2] ?? null,                                        isPadded: !hasThird, flexStyle: hasThird ? { flex: 1, minHeight: 0 } : { flexShrink: 0, maxHeight: 115 } },
   ]
 
+  const headerButtonStyle = {
+    display: 'flex', alignItems: 'center', gap: 6,
+    height: 28, paddingInline: 12, borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.06)',
+    color: 'rgba(255,255,255,0.45)',
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 700, fontSize: 13, letterSpacing: '0.06em',
+    textTransform: 'uppercase', cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+  }
+  const headerButtonEnter = (e) => {
+    e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+    e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
+    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'
+  }
+  const headerButtonLeave = (e) => {
+    e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+    e.currentTarget.style.color = 'rgba(255,255,255,0.45)'
+    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
+  }
+
   return (
     <div style={{
       width: '100%', height: '100%',
@@ -306,7 +329,14 @@ export default function ConversationScreen({
         padding: '11px 24px 9px', gap: 14, flexShrink: 0,
         animation: revealed ? 'fadeUp 0.4s ease both' : 'none',
       }}>
-        <TMLogo />
+        <div
+          onClick={onHome ?? undefined}
+          style={{ cursor: onHome ? 'pointer' : 'default', opacity: 0.85, transition: 'opacity 0.15s' }}
+          onMouseEnter={onHome ? (e) => (e.currentTarget.style.opacity = '1') : undefined}
+          onMouseLeave={onHome ? (e) => (e.currentTarget.style.opacity = '0.85') : undefined}
+        >
+          <TMLogo />
+        </div>
         <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
         {/* Avatar + player info */}

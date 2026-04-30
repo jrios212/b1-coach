@@ -912,7 +912,13 @@ export default function App() {
             setScreen('live')
           }}
           sessionContext={sessionContext}
-          onChartSignal={() => setScreen('conversation')}
+          onChartSignal={(chartKey, currentMessages) => {
+            if (chartKey) {
+              setConversationMessages(currentMessages ?? [])
+              setConversationStats(viewed?.stats ?? null)
+              setScreen('conversation')
+            }
+          }}
           rawSwings={rawSwings}
           topEV={topEV}
         />
@@ -933,6 +939,7 @@ export default function App() {
         topEV={conversationStats ? Math.max(...(sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings.map((s) => s.hit.launch.exitSpeed) ?? [0])) : null}
         onSendMessage={(msg) => console.log('send:', msg)}
         onCollapse={() => setScreen('debrief')}
+        onHome={handleHome}
         isLoading={false}
       />
     </div>
