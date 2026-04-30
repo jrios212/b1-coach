@@ -639,21 +639,21 @@ const NICKNAMES = [
 
 export default function App() {
   const mockSwings = [
-    { hit: { launch: { exitSpeed: 91, angle: 28, direction:   2 }, landing: { distance: 382 } } },
-    { hit: { launch: { exitSpeed: 87, angle: 15, direction: -22 }, landing: { distance: 305 } } },
-    { hit: { launch: { exitSpeed: 94, angle: 32, direction:   1 }, landing: { distance: 418 } } },
-    { hit: { launch: { exitSpeed: 82, angle:  8, direction: -12 }, landing: { distance: 268 } } },
-    { hit: { launch: { exitSpeed: 96, angle: 30, direction:   4 }, landing: { distance: 431 } } },
-    { hit: { launch: { exitSpeed: 89, angle: 22, direction: -18 }, landing: { distance: 352 } } },
-    { hit: { launch: { exitSpeed: 85, angle: 12, direction:   8 }, landing: { distance: 290 } } },
-    { hit: { launch: { exitSpeed: 93, angle: 35, direction:   0 }, landing: { distance: 408 } } },
-    { hit: { launch: { exitSpeed: 88, angle: 26, direction:  25 }, landing: { distance: 365 } } },
-    { hit: { launch: { exitSpeed: 90, angle: 18, direction:   6 }, landing: { distance: 335 } } },
-    { hit: { launch: { exitSpeed: 95, angle: 29, direction:  -2 }, landing: { distance: 425 } } },
-    { hit: { launch: { exitSpeed: 83, angle:  5, direction:  15 }, landing: { distance: 255 } } },
-    { hit: { launch: { exitSpeed: 92, angle: 31, direction: -28 }, landing: { distance: 395 } } },
-    { hit: { launch: { exitSpeed: 86, angle: 20, direction:  20 }, landing: { distance: 320 } } },
-    { hit: { launch: { exitSpeed: 98, angle: 27, direction:   1 }, landing: { distance: 445 } } },
+    { plateLocHeight: 2.8, plateLocSide:  0.2, hit: { launch: { exitSpeed: 91, angle: 28, direction:   2 }, landing: { distance: 382 } } },
+    { plateLocHeight: 1.2, plateLocSide: -0.3, hit: { launch: { exitSpeed: 87, angle: 15, direction: -22 }, landing: { distance: 305 } } },
+    { plateLocHeight: 3.1, plateLocSide: -0.5, hit: { launch: { exitSpeed: 94, angle: 32, direction:   1 }, landing: { distance: 418 } } },
+    { plateLocHeight: 2.3, plateLocSide:  0.9, hit: { launch: { exitSpeed: 82, angle:  8, direction: -12 }, landing: { distance: 268 } } },
+    { plateLocHeight: 2.6, plateLocSide:  0.4, hit: { launch: { exitSpeed: 96, angle: 30, direction:   4 }, landing: { distance: 431 } } },
+    { plateLocHeight: 3.8, plateLocSide:  0.1, hit: { launch: { exitSpeed: 89, angle: 22, direction: -18 }, landing: { distance: 352 } } },
+    { plateLocHeight: 2.1, plateLocSide: -0.6, hit: { launch: { exitSpeed: 85, angle: 12, direction:   8 }, landing: { distance: 290 } } },
+    { plateLocHeight: 2.9, plateLocSide:  0.3, hit: { launch: { exitSpeed: 93, angle: 35, direction:   0 }, landing: { distance: 408 } } },
+    { plateLocHeight: 1.4, plateLocSide:  0.5, hit: { launch: { exitSpeed: 88, angle: 26, direction:  25 }, landing: { distance: 365 } } },
+    { plateLocHeight: 3.3, plateLocSide: -0.4, hit: { launch: { exitSpeed: 90, angle: 18, direction:   6 }, landing: { distance: 335 } } },
+    { plateLocHeight: 2.7, plateLocSide:  0.6, hit: { launch: { exitSpeed: 95, angle: 29, direction:  -2 }, landing: { distance: 425 } } },
+    { plateLocHeight: 0.8, plateLocSide: -0.2, hit: { launch: { exitSpeed: 83, angle:  5, direction:  15 }, landing: { distance: 255 } } },
+    { plateLocHeight: 2.4, plateLocSide: -0.3, hit: { launch: { exitSpeed: 92, angle: 31, direction: -28 }, landing: { distance: 395 } } },
+    { plateLocHeight: 3.6, plateLocSide:  0.8, hit: { launch: { exitSpeed: 86, angle: 20, direction:  20 }, landing: { distance: 320 } } },
+    { plateLocHeight: 2.5, plateLocSide:  0.1, hit: { launch: { exitSpeed: 98, angle: 27, direction:   1 }, landing: { distance: 445 } } },
   ]
 
   const [screen, setScreen] = useState('goal')
@@ -679,7 +679,10 @@ export default function App() {
     const total = swings.length
     const avgExitVelocity = Math.round(swings.reduce((s, w) => s + w.hit.launch.exitSpeed, 0) / total)
     const avgLaunchAngle = Math.round(swings.reduce((s, w) => s + w.hit.launch.angle, 0) / total)
-    const inZoneCount = swings.filter((w) => w.hit.launch.angle >= 25 && w.hit.launch.angle <= 35).length
+    const inZoneCount = swings.filter((w) =>
+      w.plateLocHeight >= 1.5 && w.plateLocHeight <= 3.5 &&
+      w.plateLocSide >= -0.7 && w.plateLocSide <= 0.7
+    ).length
     return { avgExitVelocity, avgLaunchAngle, inZoneCount, totalSwings: total }
   }
 
@@ -701,7 +704,18 @@ export default function App() {
       const la = Math.round(Math.max(-5, Math.min(45, sessionLA + (Math.random() - 0.5) * 20 * varianceFactor)))
       const dir = Math.round((Math.random() - 0.5) * 50 * varianceFactor)
       const dist = Math.round(ev * 4.0 + la * 1.8)
-      return { hit: { launch: { exitSpeed: ev, angle: la, direction: dir }, landing: { distance: dist } } }
+      const inZonePitch = Math.random() < 0.70
+      const plateLocHeight = inZonePitch
+        ? 1.5 + Math.random() * 2.0
+        : Math.random() < 0.5
+          ? 0.5 + Math.random() * 0.9
+          : 3.6 + Math.random() * 0.8
+      const plateLocSide = inZonePitch
+        ? -0.7 + Math.random() * 1.4
+        : Math.random() < 0.5
+          ? -1.3 - Math.random() * 0.4
+          : 0.8 + Math.random() * 0.4
+      return { plateLocHeight: Math.round(plateLocHeight * 100) / 100, plateLocSide: Math.round(plateLocSide * 100) / 100, hit: { launch: { exitSpeed: ev, angle: la, direction: dir }, landing: { distance: dist } } }
     })
   }
 

@@ -688,17 +688,12 @@ function SprayDirection({ swings }) {
 }
 
 // ── Launch angle zone breakdown horizontal bar chart ──────────────────────
-function ZoneBreakdown({ swings, goalId }) {
-  const isInZone = (angle) => {
-    if (goalId === 'power')     return angle >= 25 && angle <= 35
-    if (goalId === 'contact')   return angle >= 10 && angle <= 20
-    if (goalId === 'allfields') return angle >= 10 && angle <= 25
-    if (goalId === 'popup')     return angle >= 15
-    return angle >= 15 && angle <= 35
-  }
-
-  const inZone     = swings.filter((s) => isInZone(s.hit.launch.angle)).length
-  const outOfZone  = swings.length - inZone
+function ZoneBreakdown({ swings }) {
+  const inZone    = swings.filter((s) =>
+    s.plateLocHeight >= 1.5 && s.plateLocHeight <= 3.5 &&
+    s.plateLocSide >= -0.7 && s.plateLocSide <= 0.7
+  ).length
+  const outOfZone = swings.length - inZone
 
   const data = [
     { label: 'In Zone',     count: inZone },
@@ -1045,7 +1040,7 @@ export default function DebriefScreen({
                 trend_ev:        'Exit Velocity Trend',
                 bar_distance:    'Distance Distribution',
                 spray_direction: 'Spray Chart',
-                zone_breakdown:  'In-Zone Breakdown',
+                zone_breakdown:  'Pitch Zone Contact',
               }
               const label = CHART_LABELS[chart?.type] ?? 'Chart'
 
@@ -1066,7 +1061,7 @@ export default function DebriefScreen({
                   ) : chart?.type === 'spray_direction' ? (
                     <SprayDirection swings={rawSwings} />
                   ) : chart?.type === 'zone_breakdown' ? (
-                    <ZoneBreakdown swings={rawSwings} goalId={goalId} />
+                    <ZoneBreakdown swings={rawSwings} />
                   ) : (
                     <div style={{
                       flex: 1, display: 'flex', flexDirection: 'column',
@@ -1247,7 +1242,8 @@ export default function DebriefScreen({
                     const la   = swing.hit.launch.angle
                     const dir  = swing.hit.launch.direction
                     const dist = swing.hit.landing.distance
-                    const inZoneRow = la >= 25 && la <= 35
+                    const inZoneRow = swing.plateLocHeight >= 1.5 && swing.plateLocHeight <= 3.5 &&
+                      swing.plateLocSide >= -0.7 && swing.plateLocSide <= 0.7
                     const rowBg = i % 2 === 1 ? 'rgba(255,255,255,0.02)' : 'transparent'
                     const cellStyle = {
                       padding: '9px 14px',
