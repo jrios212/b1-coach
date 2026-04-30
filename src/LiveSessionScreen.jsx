@@ -277,7 +277,6 @@ export default function LiveSessionScreen({
   goalId = null,
   goalLabel = null,
   swings = [],
-  sessionComplete = false,
   onHome = null,
   onEndSession = null,
 }) {

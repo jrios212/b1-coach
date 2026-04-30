@@ -194,34 +194,6 @@ function ChartPanel({ label, delay, flexStyle, isPadded = false }) {
   )
 }
 
-// ── Bottom stat pill ───────────────────────────────────────────────────────
-function StatPill({ label, value, highlight }) {
-  return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      borderRadius: 10,
-      background: highlight ? `${ACCENT}18` : 'rgba(255,255,255,0.04)',
-      border: `1px solid ${highlight ? ACCENT + '40' : 'rgba(255,255,255,0.07)'}`,
-    }}>
-      <div style={{
-        fontFamily: "'Barlow Condensed', sans-serif",
-        fontWeight: 800, fontSize: 18, lineHeight: 1,
-        color: highlight ? ACCENT : 'rgba(255,255,255,0.85)',
-      }}>
-        {value}
-      </div>
-      <div style={{
-        fontFamily: "'Barlow', sans-serif",
-        fontSize: 9.5, color: 'rgba(255,255,255,0.35)',
-        marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em',
-      }}>
-        {label}
-      </div>
-    </div>
-  )
-}
-
 // ── Conversation Screen ────────────────────────────────────────────────────
 // Props:
 //   player          — { firstName, lastName } from TrackMan API, or null
@@ -291,28 +263,6 @@ export default function ConversationScreen({
     { chart: charts[1] ?? { label: 'Launch Angle vs Exit Velocity' }, isPadded: false,     flexStyle: { flex: 1, minHeight: 0 } },
     { chart: charts[2] ?? null,                                        isPadded: !hasThird, flexStyle: hasThird ? { flex: 1, minHeight: 0 } : { flexShrink: 0, maxHeight: 115 } },
   ]
-
-  const headerButtonStyle = {
-    display: 'flex', alignItems: 'center', gap: 6,
-    height: 28, paddingInline: 12, borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.06)',
-    color: 'rgba(255,255,255,0.45)',
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontWeight: 700, fontSize: 13, letterSpacing: '0.06em',
-    textTransform: 'uppercase', cursor: 'pointer',
-    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-  }
-  const headerButtonEnter = (e) => {
-    e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
-    e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
-    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'
-  }
-  const headerButtonLeave = (e) => {
-    e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
-    e.currentTarget.style.color = 'rgba(255,255,255,0.45)'
-    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
-  }
 
   return (
     <div style={{

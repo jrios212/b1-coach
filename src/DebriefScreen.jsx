@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { sendChatMessage } from './coachApi'
 
 const ACCENT = '#FF6B1A'
-const GOLD   = '#F5A623'
 
 const PAD = 14
 const GAP = 8
@@ -133,74 +132,6 @@ function Panel({ label, labelColor = 'rgba(255,255,255,0.5)', headerRight, child
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           {children}
         </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Stat pill ──────────────────────────────────────────────────────────────
-function StatPill({ label, value, unit, highlight }) {
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '10px 16px', borderRadius: 12, minWidth: 0,
-      background: highlight ? `${ACCENT}18` : 'rgba(255,255,255,0.05)',
-      border: `1px solid ${highlight ? ACCENT + '40' : 'rgba(255,255,255,0.08)'}`,
-    }}>
-      <div style={{
-        fontFamily: "'Barlow Condensed', sans-serif",
-        fontWeight: 800, fontSize: 28, lineHeight: 1,
-        color: highlight ? ACCENT : '#fff',
-      }}>
-        {value}
-        <span style={{ fontSize: 14, fontWeight: 600, marginLeft: 2 }}>{unit}</span>
-      </div>
-      <div style={{
-        fontFamily: "'Barlow', sans-serif",
-        fontSize: 11, color: 'rgba(255,255,255,0.4)',
-        marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em',
-      }}>
-        {label}
-      </div>
-    </div>
-  )
-}
-
-// ── Chart placeholder ──────────────────────────────────────────────────────
-function ChartPlaceholder({ chart }) {
-  const label = chart?.type
-    ? chart.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-    : 'Chart'
-
-  return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      gap: 10, minHeight: 0,
-    }}>
-      <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', inset: 0, pointerEvents: 'none' }}
-        viewBox="0 0 200 120" preserveAspectRatio="none">
-        {[20, 40, 60, 80].map((y) => (
-          <line key={y} x1="0" y1={y} x2="200" y2={y} stroke="white" strokeWidth="0.5" />
-        ))}
-        {[40, 80, 120, 160].map((x) => (
-          <line key={x} x1={x} y1="0" x2={x} y2="120" stroke="white" strokeWidth="0.5" />
-        ))}
-      </svg>
-      <div style={{
-        fontFamily: "'Barlow Condensed', sans-serif",
-        fontWeight: 700, fontSize: 11, letterSpacing: '0.1em',
-        textTransform: 'uppercase', color: 'rgba(255,255,255,0.18)',
-        textAlign: 'center', position: 'relative',
-      }}>
-        {label}
-      </div>
-      <div style={{
-        fontFamily: "'Barlow', sans-serif",
-        fontSize: 10, color: 'rgba(255,255,255,0.12)',
-        textAlign: 'center', position: 'relative',
-      }}>
-        Chart will render here
       </div>
     </div>
   )
