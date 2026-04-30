@@ -680,6 +680,76 @@ function SprayDirection({ swings }) {
   )
 }
 
+// ── Launch angle zone breakdown horizontal bar chart ──────────────────────
+function ZoneBreakdown({ swings, goalId }) {
+  const isInZone = (angle) => {
+    if (goalId === 'power')     return angle >= 25 && angle <= 35
+    if (goalId === 'contact')   return angle >= 10 && angle <= 20
+    if (goalId === 'allfields') return angle >= 10 && angle <= 25
+    if (goalId === 'popup')     return angle >= 15
+    return angle >= 15 && angle <= 35
+  }
+
+  const inZone     = swings.filter((s) => isInZone(s.hit.launch.angle)).length
+  const outOfZone  = swings.length - inZone
+
+  const data = [
+    { label: 'In Zone',     count: inZone },
+    { label: 'Out of Zone', count: outOfZone },
+  ]
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} layout="vertical" margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
+          <XAxis
+            type="number"
+            allowDecimals={false}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{
+              value: 'SWINGS',
+              position: 'insideBottom',
+              offset: -15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" },
+            }}
+          />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={72}
+            tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Barlow, sans-serif' }}
+          />
+          <Bar dataKey="count" radius={[0, 3, 3, 0]}>
+            {data.map((entry, i) => (
+              <Cell
+                key={i}
+                fill={entry.label === 'In Zone' ? '#FF6B1A' : 'rgba(255,107,26,0.3)'}
+              />
+            ))}
+            <LabelList
+              dataKey="count"
+              position="right"
+              style={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Barlow Condensed, sans-serif' }}
+            />
+          </Bar>
+          <Tooltip
+            cursor={false}
+            contentStyle={{
+              background: 'rgba(20,22,28,0.95)',
+              border: '1px solid rgba(255,107,26,0.3)',
+              borderRadius: 8,
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 12,
+            }}
+            formatter={(value) => [`${value}`, 'Swings']}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 // ── Debrief Screen ─────────────────────────────────────────────────────────
 // Props:
 //   player           — { firstName, lastName } from TrackMan API, or null
@@ -981,6 +1051,8 @@ export default function DebriefScreen({
                     <BarDistance swings={rawSwings} />
                   ) : chart?.type === 'spray_direction' ? (
                     <SprayDirection swings={rawSwings} />
+                  ) : chart?.type === 'zone_breakdown' ? (
+                    <ZoneBreakdown swings={rawSwings} goalId={goalId} />
                   ) : (
                     <div style={{
                       flex: 1, display: 'flex', flexDirection: 'column',
