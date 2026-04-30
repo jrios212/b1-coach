@@ -681,14 +681,23 @@ export default function App() {
     return { avgExitVelocity, avgLaunchAngle, inZoneCount, totalSwings: total }
   }
 
-  const generateSwings = (prevSwings) => {
+  const generateSwings = (prevSwings, sessionNum = 2) => {
     const prevEV = prevSwings.reduce((s, w) => s + w.hit.launch.exitSpeed, 0) / prevSwings.length
     const prevLA = prevSwings.reduce((s, w) => s + w.hit.launch.angle, 0) / prevSwings.length
+
+    // 65/35 improvement bias on session average
+    const improving = Math.random() < 0.65
+    const sessionEV = prevEV + (improving ? (1 + Math.random() * 3) : -(1 + Math.random() * 2))
+    const sessionLA = prevLA + (improving ? (0.5 + Math.random() * 2) : -(0.5 + Math.random() * 1.5))
+
+    // Variance shrinks naturally as sessions progress (more consistent with practice)
+    // Session 2: ~87% of session 1 spread, Session 3: ~75%, Session 4: ~65%
+    const varianceFactor = Math.max(0.65, 1 - (sessionNum - 2) * 0.12)
+
     return Array.from({ length: 15 }, () => {
-      const improve = Math.random() < 0.7
-      const ev = Math.round(Math.max(72, Math.min(105, prevEV + (improve ? 1 + Math.random() * 3 : -(1 + Math.random())))))
-      const la = Math.round(Math.max(-5, Math.min(45, prevLA + (improve ? 1 + Math.random() * 2 : -(1 + Math.random())))))
-      const dir = Math.round((Math.random() - 0.5) * 30)
+      const ev = Math.round(Math.max(72, Math.min(105, sessionEV + (Math.random() - 0.5) * 16 * varianceFactor)))
+      const la = Math.round(Math.max(-5, Math.min(45, sessionLA + (Math.random() - 0.5) * 20 * varianceFactor)))
+      const dir = Math.round((Math.random() - 0.5) * 50 * varianceFactor)
       const dist = Math.round(ev * 4.0 + la * 1.8)
       return { hit: { launch: { exitSpeed: ev, angle: la, direction: dir }, landing: { distance: dist } } }
     })
@@ -904,7 +913,7 @@ export default function App() {
           sessionCapReached={sessionHistory.length >= SESSION_MEMORY_DEPTH}
           onNewSession={() => {
             if (sessionHistory.length >= SESSION_MEMORY_DEPTH) return
-            const newSwings = generateSwings(activeSwings)
+            const newSwings = generateSwings(activeSwings, sessionNumber + 1)
             const newNum = sessionNumber + 1
             setActiveSwings(newSwings)
             setSessionNumber(newNum)
@@ -937,6 +946,7 @@ export default function App() {
         charts={debriefContent?.charts?.map((key) => ({ type: key })) ?? []}
         sessionStats={conversationStats}
         topEV={conversationStats ? Math.max(...(sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings.map((s) => s.hit.launch.exitSpeed) ?? [0])) : null}
+        swings={sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings ?? []}
         onSendMessage={(msg) => console.log('send:', msg)}
         onCollapse={() => setScreen('debrief')}
         onHome={handleHome}

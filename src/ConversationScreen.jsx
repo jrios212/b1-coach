@@ -1,6 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
+import {
+  ScatterChart, Scatter, LineChart, Line, BarChart, Bar, LabelList,
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Cell,
+} from 'recharts'
 
 const ACCENT = '#FF6B1A'
+
+const CHART_LABELS = {
+  scatter_ev_la:   'Launch Angle vs Exit Velocity',
+  trend_ev:        'Exit Velocity Trend',
+  bar_distance:    'Distance Distribution',
+  spray_direction: 'Spray Chart',
+  zone_breakdown:  'In-Zone Breakdown',
+}
 
 // ── TrackMan logo ──────────────────────────────────────────────────────────
 function TMLogo() {
@@ -93,9 +106,223 @@ function RadarDecor() {
   )
 }
 
+// ── Chart components (shared with DebriefScreen) ───────────────────────────
+function ScatterEVLA({ swings }) {
+  const data = swings.map((swing) => ({
+    ev: swing.hit.launch.exitSpeed,
+    la: swing.hit.launch.angle,
+  }))
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
+          <ReferenceArea y1={25} y2={35} fill="#FF6B1A" fillOpacity={0.08} stroke="#FF6B1A" strokeOpacity={0.25} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <XAxis dataKey="ev" type="number" domain={['auto', 'auto']}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'EXIT VELOCITY (MPH)', position: 'insideBottom', offset: -15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
+          <YAxis dataKey="la" type="number" domain={[dataMin => Math.min(dataMin - 2, 0), dataMax => Math.max(dataMax + 2, 38)]}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'LAUNCH ANG.', angle: -90, position: 'insideLeft', offset: 15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
+          <ReferenceLine y={25} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
+          <ReferenceLine y={35} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
+          <Scatter data={data} name="Swings">
+            {data.map((entry, i) => (
+              <Cell key={i}
+                fill={entry.la >= 25 && entry.la <= 35 ? '#FF6B1A' : 'rgba(255,255,255,0.3)'}
+                fillOpacity={entry.la >= 25 && entry.la <= 35 ? 0.9 : 0.5} />
+            ))}
+          </Scatter>
+          <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
+            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+            formatter={(value, name) => {
+              if (name === 'ev') return [`${value} mph`, 'Exit Velo']
+              if (name === 'la') return [`${value}°`, 'Launch Angle']
+              return [value, name]
+            }} />
+        </ScatterChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function TrendEV({ swings }) {
+  const data = swings.map((swing, i) => ({ swing: i + 1, ev: swing.hit.launch.exitSpeed }))
+  const avgEV = Math.round(data.reduce((sum, d) => sum + d.ev, 0) / data.length)
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <XAxis dataKey="swing" type="number" domain={[1, 15]} ticks={[1, 3, 5, 7, 9, 11, 13, 15]}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'SWING #', position: 'insideBottom', offset: -15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
+          <YAxis dataKey="ev" type="number" domain={[dataMin => dataMin - 3, dataMax => dataMax + 3]}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'EXIT VELO', angle: -90, position: 'insideLeft', offset: 15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
+          <ReferenceLine y={avgEV} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 4"
+            label={{ value: `avg ${avgEV}`, position: 'right', fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: 'Barlow' }} />
+          <Line type="monotone" dataKey="ev" stroke="#FF6B1A" strokeWidth={2}
+            dot={{ fill: '#FF6B1A', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: '#FF6B1A' }} />
+          <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
+            labelStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+            labelFormatter={(value) => `Swing ${value}`}
+            formatter={(value) => [`${value} mph`, 'Exit Velo']} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function BarDistance({ swings }) {
+  const buckets = [
+    { range: '160-220', min: 160, max: 220 },
+    { range: '220-260', min: 220, max: 260 },
+    { range: '260-300', min: 260, max: 300 },
+    { range: '300-340', min: 300, max: 340 },
+    { range: '340+',    min: 340, max: Infinity },
+  ]
+  const data = buckets.map(({ range, min, max }) => ({
+    range,
+    count: swings.filter((s) => { const d = s.hit.landing.distance; return d >= min && d < max }).length,
+  }))
+  const maxCount = Math.max(...data.map((d) => d.count))
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+          <XAxis dataKey="range"
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'DISTANCE (FT)', position: 'insideBottom', offset: -15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
+          <YAxis dataKey="count" allowDecimals={false}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'SWINGS', angle: -90, position: 'insideLeft', offset: 15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
+          <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.count === maxCount ? '#FF6B1A' : 'rgba(255,107,26,0.35)'} />
+            ))}
+            <LabelList dataKey="count" position="top"
+              style={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: 'Barlow Condensed, sans-serif' }} />
+          </Bar>
+          <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
+            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+            formatter={(value) => [`${value}`, 'Swings']} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function SprayDirection({ swings }) {
+  const cx = 150
+  const cy = 200
+  const arcPoint = (angleDeg, r) => {
+    const rad = (angleDeg * Math.PI) / 180
+    return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) }
+  }
+  const arcPath = (r) => {
+    const l = arcPoint(-45, r)
+    const rp = arcPoint(45, r)
+    return `M ${l.x} ${l.y} A ${r} ${r} 0 0 1 ${rp.x} ${rp.y}`
+  }
+  const leftLine  = arcPoint(-45, 190)
+  const rightLine = arcPoint(45, 190)
+  const fairPath = [`M ${cx} ${cy}`, `L ${leftLine.x} ${leftLine.y}`, `A 190 190 0 0 1 ${rightLine.x} ${rightLine.y}`, 'Z'].join(' ')
+  const infieldLabel  = arcPoint(0, 120)
+  const outfieldLabel = arcPoint(0, 178)
+  const renderShape = (x, y, dir, i) => {
+    if (dir < -15) return <circle key={i} cx={x} cy={y} r={5} fill="#FF6B1A" fillOpacity={0.8} />
+    if (dir > 15) {
+      const pts = `${x},${y - 6} ${x - 5},${y + 4} ${x + 5},${y + 4}`
+      return <polygon key={i} points={pts} fill="rgba(180,180,255,0.8)" fillOpacity={0.8} />
+    }
+    return <rect key={i} x={x - 4} y={y - 4} width={8} height={8} fill="rgba(255,200,100,0.8)" fillOpacity={0.8} transform={`rotate(45, ${x}, ${y})`} />
+  }
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <svg width="100%" height="100%" viewBox="0 0 300 222" preserveAspectRatio="xMidYMid meet">
+        <path d={fairPath} fill="rgba(255,255,255,0.03)" />
+        <line x1={cx} y1={cy} x2={leftLine.x}  y2={leftLine.y}  stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <line x1={cx} y1={cy} x2={rightLine.x} y2={rightLine.y} stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        <path d={arcPath(120)} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+        <path d={arcPath(185)} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+        <text x={infieldLabel.x}  y={infieldLabel.y  - 5} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Barlow, sans-serif">200ft</text>
+        <text x={outfieldLabel.x} y={outfieldLabel.y - 5} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Barlow, sans-serif">350ft+</text>
+        {swings.map((swing, i) => {
+          const dir  = swing.hit.launch.direction
+          const dist = swing.hit.landing.distance
+          const scale = Math.min(dist / 420, 1) * 140
+          const rad = (dir * Math.PI) / 180
+          const x = cx + scale * Math.sin(rad)
+          const y = cy - scale * Math.cos(rad)
+          return renderShape(x, y, dir, i)
+        })}
+        <circle cx={86} cy={217} r={5} fill="#FF6B1A" fillOpacity={0.8} />
+        <text x={97} y={221} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Pull</text>
+        <rect x={129} y={213} width={8} height={8} fill="rgba(255,200,100,0.8)" fillOpacity={0.8} transform="rotate(45, 133, 217)" />
+        <text x={145} y={221} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Center</text>
+        <polygon points="192,212 187,221 197,221" fill="rgba(180,180,255,0.8)" fillOpacity={0.8} />
+        <text x={203} y={221} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Oppo</text>
+      </svg>
+    </div>
+  )
+}
+
+function ZoneBreakdown({ swings, goalId }) {
+  const isInZone = (angle) => {
+    if (goalId === 'power')     return angle >= 25 && angle <= 35
+    if (goalId === 'contact')   return angle >= 10 && angle <= 20
+    if (goalId === 'allfields') return angle >= 10 && angle <= 25
+    if (goalId === 'popup')     return angle >= 15
+    return angle >= 15 && angle <= 35
+  }
+  const inZone    = swings.filter((s) => isInZone(s.hit.launch.angle)).length
+  const outOfZone = swings.length - inZone
+  const data = [
+    { label: 'In Zone',     count: inZone },
+    { label: 'Out of Zone', count: outOfZone },
+  ]
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} layout="vertical" margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
+          <XAxis type="number" allowDecimals={false}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'SWINGS', position: 'insideBottom', offset: -15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
+          <YAxis type="category" dataKey="label" width={72}
+            tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Barlow, sans-serif' }} />
+          <Bar dataKey="count" radius={[0, 3, 3, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.label === 'In Zone' ? '#FF6B1A' : 'rgba(255,107,26,0.3)'} />
+            ))}
+            <LabelList dataKey="count" position="right"
+              style={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Barlow Condensed, sans-serif' }} />
+          </Bar>
+          <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
+            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+            formatter={(value) => [`${value}`, 'Swings']} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 // ── Chart placeholder panel ────────────────────────────────────────────────
 // isPadded — true when this is a default-filled third slot with no real chart data
-function ChartPanel({ label, delay, flexStyle, isPadded = false }) {
+function ChartPanel({ label, delay, flexStyle, isPadded = false, chart = null, swings = null, goalId = null }) {
   if (isPadded) {
     return (
       <div style={{
@@ -159,36 +386,47 @@ function ChartPanel({ label, delay, flexStyle, isPadded = false }) {
         }}>
           {label}
         </div>
-        {/* Placeholder body */}
-        <div style={{
-          flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          position: 'relative', gap: 8,
-        }}>
-          {/* Subtle grid */}
-          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }}
-            viewBox="0 0 200 100" preserveAspectRatio="none">
-            {[25, 50, 75].map((y) => (
-              <line key={y} x1="0" y1={y} x2="200" y2={y} stroke="white" strokeWidth="0.8" />
-            ))}
-            {[50, 100, 150].map((x) => (
-              <line key={x} x1={x} y1="0" x2={x} y2="100" stroke="white" strokeWidth="0.8" />
-            ))}
-          </svg>
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ opacity: 0.18 }}>
-            <rect x="2" y="2" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-            <rect x="15" y="2" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-            <rect x="2" y="15" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-            <rect x="15" y="15" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-          </svg>
+        {/* Chart body */}
+        {chart?.type === 'scatter_ev_la' ? (
+          <ScatterEVLA swings={swings ?? []} />
+        ) : chart?.type === 'trend_ev' ? (
+          <TrendEV swings={swings ?? []} />
+        ) : chart?.type === 'bar_distance' ? (
+          <BarDistance swings={swings ?? []} />
+        ) : chart?.type === 'spray_direction' ? (
+          <SprayDirection swings={swings ?? []} />
+        ) : chart?.type === 'zone_breakdown' ? (
+          <ZoneBreakdown swings={swings ?? []} goalId={goalId} />
+        ) : (
           <div style={{
-            fontFamily: "'Barlow', sans-serif",
-            fontSize: 11, color: 'rgba(255,255,255,0.18)',
-            textAlign: 'center', position: 'relative',
+            flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            position: 'relative', gap: 8,
           }}>
-            Chart renders here
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }}
+              viewBox="0 0 200 100" preserveAspectRatio="none">
+              {[25, 50, 75].map((y) => (
+                <line key={y} x1="0" y1={y} x2="200" y2={y} stroke="white" strokeWidth="0.8" />
+              ))}
+              {[50, 100, 150].map((x) => (
+                <line key={x} x1={x} y1="0" x2={x} y2="100" stroke="white" strokeWidth="0.8" />
+              ))}
+            </svg>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ opacity: 0.18 }}>
+              <rect x="2" y="2" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+              <rect x="15" y="2" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+              <rect x="2" y="15" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+              <rect x="15" y="15" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+            </svg>
+            <div style={{
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 11, color: 'rgba(255,255,255,0.18)',
+              textAlign: 'center', position: 'relative',
+            }}>
+              Chart renders here
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
@@ -219,6 +457,7 @@ export default function ConversationScreen({
   isLoading = false,
   topEV = null,
   onHome = null,
+  swings = null,
 }) {
   const [text, setText] = useState('')
   const [revealed, setRevealed] = useState(false)
@@ -352,15 +591,13 @@ export default function ConversationScreen({
             {chartSlots.map(({ chart, isPadded, flexStyle }, i) => (
               <ChartPanel
                 key={i}
-                label={
-                  chart?.label ??
-                  (chart?.type
-                    ? chart.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-                    : `Chart ${i + 1}`)
-                }
+                label={CHART_LABELS[chart?.type] ?? chart?.label ?? `Chart ${i + 1}`}
                 delay={0.14 + i * 0.06}
                 flexStyle={flexStyle}
                 isPadded={isPadded}
+                chart={chart}
+                swings={swings}
+                goalId={goalId}
               />
             ))}
           </div>

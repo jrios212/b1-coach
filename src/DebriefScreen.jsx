@@ -389,7 +389,7 @@ function ScatterEVLA({ swings }) {
           <YAxis
             dataKey="la"
             type="number"
-            domain={['auto', 'auto']}
+            domain={[dataMin => Math.min(dataMin - 2, 0), dataMax => Math.max(dataMax + 2, 38)]}
             tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
             label={{
               value: 'LAUNCH ANG.',
@@ -419,6 +419,8 @@ function ScatterEVLA({ swings }) {
               fontFamily: "'Barlow', sans-serif",
               fontSize: 12,
             }}
+            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
             formatter={(value, name) => {
               if (name === 'ev') return [`${value} mph`, 'Exit Velo']
               if (name === 'la') return [`${value}°`, 'Launch Angle']
@@ -461,7 +463,7 @@ function TrendEV({ swings }) {
           <YAxis
             dataKey="ev"
             type="number"
-            domain={['auto', 'auto']}
+            domain={[dataMin => dataMin - 3, dataMax => dataMax + 3]}
             tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
             label={{
               value: 'EXIT VELO',
@@ -494,6 +496,9 @@ function TrendEV({ swings }) {
               fontFamily: "'Barlow', sans-serif",
               fontSize: 12,
             }}
+            labelStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+            labelFormatter={(value) => `Swing ${value}`}
             formatter={(value) => [`${value} mph`, 'Exit Velo']}
           />
         </LineChart>
@@ -571,6 +576,8 @@ function BarDistance({ swings }) {
               fontFamily: "'Barlow', sans-serif",
               fontSize: 12,
             }}
+            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
             formatter={(value) => [`${value}`, 'Swings']}
           />
         </BarChart>
@@ -742,6 +749,8 @@ function ZoneBreakdown({ swings, goalId }) {
               fontFamily: "'Barlow', sans-serif",
               fontSize: 12,
             }}
+            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
             formatter={(value) => [`${value}`, 'Swings']}
           />
         </BarChart>
@@ -1031,9 +1040,14 @@ export default function DebriefScreen({
           {/* BOTTOM PANELS — chart placeholders */}
           <div style={{ flexShrink: 0, display: 'flex', gap: GAP, height: 280 }}>
             {chartSlots.map((chart, i) => {
-              const label = chart?.type
-                ? chart.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-                : i === 0 ? 'Launch Angle vs Exit Velocity' : 'Distance Distribution'
+              const CHART_LABELS = {
+                scatter_ev_la:   'Launch Angle vs Exit Velocity',
+                trend_ev:        'Exit Velocity Trend',
+                bar_distance:    'Distance Distribution',
+                spray_direction: 'Spray Chart',
+                zone_breakdown:  'In-Zone Breakdown',
+              }
+              const label = CHART_LABELS[chart?.type] ?? 'Chart'
 
               return (
                 <Panel
