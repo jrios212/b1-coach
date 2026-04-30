@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { sendChatMessage } from './coachApi'
+import {
+  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
+  Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Cell,
+} from 'recharts'
 
 const ACCENT = '#FF6B1A'
 
@@ -352,6 +356,80 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
   )
 }
 
+// ── EV vs Launch Angle scatter chart ──────────────────────────────────────
+function ScatterEVLA({ swings }) {
+  const data = swings.map((swing) => ({
+    ev: swing.hit.launch.exitSpeed,
+    la: swing.hit.launch.angle,
+  }))
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
+          <ReferenceArea
+            y1={25} y2={35}
+            fill="#FF6B1A" fillOpacity={0.08}
+            stroke="#FF6B1A" strokeOpacity={0.25}
+          />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <XAxis
+            dataKey="ev"
+            type="number"
+            domain={['auto', 'auto']}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{
+              value: 'EXIT VELOCITY (MPH)',
+              position: 'insideBottom',
+              offset: -15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" },
+            }}
+          />
+          <YAxis
+            dataKey="la"
+            type="number"
+            domain={['auto', 'auto']}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{
+              value: 'LAUNCH ANG.',
+              angle: -90,
+              position: 'insideLeft',
+              offset: 15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" },
+            }}
+          />
+          <ReferenceLine y={25} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
+          <ReferenceLine y={35} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
+          <Scatter data={data} name="Swings">
+            {data.map((entry, i) => (
+              <Cell
+                key={i}
+                fill={entry.la >= 25 && entry.la <= 35 ? '#FF6B1A' : 'rgba(255,255,255,0.3)'}
+                fillOpacity={entry.la >= 25 && entry.la <= 35 ? 0.9 : 0.5}
+              />
+            ))}
+          </Scatter>
+          <Tooltip
+            cursor={false}
+            contentStyle={{
+              background: 'rgba(20,22,28,0.95)',
+              border: '1px solid rgba(255,107,26,0.3)',
+              borderRadius: 8,
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 12,
+            }}
+            formatter={(value, name) => {
+              if (name === 'ev') return [`${value} mph`, 'Exit Velo']
+              if (name === 'la') return [`${value}°`, 'Launch Angle']
+              return [value, name]
+            }}
+          />
+        </ScatterChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 // ── Debrief Screen ─────────────────────────────────────────────────────────
 // Props:
 //   player           — { firstName, lastName } from TrackMan API, or null
@@ -412,7 +490,8 @@ export default function DebriefScreen({
   const total    = sessionData?.totalSwings     ?? null
 
   // Normalize charts array to exactly 2 slots for the bottom row
-  const chartSlots = [charts[0] ?? null, charts[1] ?? null]
+  const normalizeChart = (c) => c == null ? null : typeof c === 'string' ? { type: c } : c
+  const chartSlots = [normalizeChart(charts[0]), normalizeChart(charts[1])]
 
   const headerButtonStyle = {
     display: 'flex', alignItems: 'center', gap: 6,
@@ -644,37 +723,41 @@ export default function DebriefScreen({
                   delay={0.36 + i * 0.04}
                   style={{ flex: 1 }}
                 >
-                  <div style={{
-                    flex: 1, display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center',
-                    position: 'relative', minHeight: 0, gap: 8,
-                  }}>
-                    <svg
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }}
-                      preserveAspectRatio="none"
-                      viewBox="0 0 200 120"
-                    >
-                      {[25, 50, 75, 100].map((y) => (
-                        <line key={y} x1="0" y1={y} x2="200" y2={y} stroke="white" strokeWidth="0.8" />
-                      ))}
-                      {[50, 100, 150].map((x) => (
-                        <line key={x} x1={x} y1="0" x2={x} y2="120" stroke="white" strokeWidth="0.8" />
-                      ))}
-                    </svg>
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ opacity: 0.2 }}>
-                      <rect x="3" y="3" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-                      <rect x="18" y="3" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-                      <rect x="3" y="18" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-                      <rect x="18" y="18" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
-                    </svg>
+                  {chart?.type === 'scatter_ev_la' ? (
+                    <ScatterEVLA swings={rawSwings} />
+                  ) : (
                     <div style={{
-                      fontFamily: "'Barlow', sans-serif",
-                      fontSize: 11, color: 'rgba(255,255,255,0.18)',
-                      textAlign: 'center', position: 'relative',
+                      flex: 1, display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center',
+                      position: 'relative', minHeight: 0, gap: 8,
                     }}>
-                      Chart renders here
+                      <svg
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }}
+                        preserveAspectRatio="none"
+                        viewBox="0 0 200 120"
+                      >
+                        {[25, 50, 75, 100].map((y) => (
+                          <line key={y} x1="0" y1={y} x2="200" y2={y} stroke="white" strokeWidth="0.8" />
+                        ))}
+                        {[50, 100, 150].map((x) => (
+                          <line key={x} x1={x} y1="0" x2={x} y2="120" stroke="white" strokeWidth="0.8" />
+                        ))}
+                      </svg>
+                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ opacity: 0.2 }}>
+                        <rect x="3" y="3" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+                        <rect x="18" y="3" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+                        <rect x="3" y="18" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+                        <rect x="18" y="18" width="11" height="11" rx="2" stroke="white" strokeWidth="1.5" />
+                      </svg>
+                      <div style={{
+                        fontFamily: "'Barlow', sans-serif",
+                        fontSize: 11, color: 'rgba(255,255,255,0.18)',
+                        textAlign: 'center', position: 'relative',
+                      }}>
+                        Chart renders here
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </Panel>
               )
             })}
