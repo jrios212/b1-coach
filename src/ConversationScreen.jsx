@@ -214,6 +214,7 @@ function BarDistance({ swings }) {
               style={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: 'Barlow Condensed, sans-serif' }} />
           </Bar>
           <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
+            labelFormatter={(value) => value}
             labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
             itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
             formatter={(value) => [`${value}`, 'Swings']} />
@@ -307,6 +308,7 @@ function ZoneBreakdown({ swings }) {
               style={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Barlow Condensed, sans-serif' }} />
           </Bar>
           <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
+            labelFormatter={() => 'Distance Range'}
             labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
             itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
             formatter={(value) => [`${value}`, 'Swings']} />

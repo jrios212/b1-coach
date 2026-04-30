@@ -576,6 +576,7 @@ function BarDistance({ swings }) {
               fontFamily: "'Barlow', sans-serif",
               fontSize: 12,
             }}
+            labelFormatter={() => 'Distance Range'}
             labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
             itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
             formatter={(value) => [`${value}`, 'Swings']}
@@ -744,6 +745,7 @@ function ZoneBreakdown({ swings }) {
               fontFamily: "'Barlow', sans-serif",
               fontSize: 12,
             }}
+            labelFormatter={(value) => value}
             labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
             itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
             formatter={(value) => [`${value}`, 'Swings']}

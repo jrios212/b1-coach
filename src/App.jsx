@@ -942,7 +942,11 @@ export default function App() {
             if (chartKey) {
               setConversationMessages(currentMessages ?? [])
               setConversationStats(viewed?.stats ?? null)
-              setConversationCharts([])
+              setConversationCharts(prev => {
+                if (!chartKey) return prev
+                if (prev.find(c => c.type === chartKey)) return prev
+                return [...prev, { type: chartKey }]
+              })
               setScreen('conversation')
             }
           }}
@@ -982,6 +986,13 @@ export default function App() {
             })
             const finalMessages = [...updatedMessages, { role: 'coach', content: result.message }]
             setConversationMessages(finalMessages)
+            setSessionHistory(prev =>
+              prev.map(s =>
+                s.sessionNumber === (viewingSession ?? sessionNumber)
+                  ? { ...s, messages: finalMessages }
+                  : s
+              )
+            )
             if (result.chart) {
               setConversationCharts((prev) => {
                 if (prev.find((c) => c.type === result.chart)) return prev
