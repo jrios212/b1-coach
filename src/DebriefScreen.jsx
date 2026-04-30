@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { sendChatMessage } from './coachApi'
 import {
-  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
+  ScatterChart, Scatter, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Cell,
 } from 'recharts'
 
@@ -430,6 +430,77 @@ function ScatterEVLA({ swings }) {
   )
 }
 
+// ── Exit velocity trend line chart ────────────────────────────────────────
+function TrendEV({ swings }) {
+  const data = swings.map((swing, i) => ({
+    swing: i + 1,
+    ev: swing.hit.launch.exitSpeed,
+  }))
+
+  const avgEV = Math.round(data.reduce((sum, d) => sum + d.ev, 0) / data.length)
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <XAxis
+            dataKey="swing"
+            type="number"
+            domain={[1, 15]}
+            ticks={[1, 3, 5, 7, 9, 11, 13, 15]}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{
+              value: 'SWING #',
+              position: 'insideBottom',
+              offset: -15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" },
+            }}
+          />
+          <YAxis
+            dataKey="ev"
+            type="number"
+            domain={['auto', 'auto']}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{
+              value: 'EXIT VELO',
+              angle: -90,
+              position: 'insideLeft',
+              offset: 15,
+              style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" },
+            }}
+          />
+          <ReferenceLine
+            y={avgEV}
+            stroke="rgba(255,255,255,0.2)"
+            strokeDasharray="4 4"
+            label={{ value: `avg ${avgEV}`, position: 'right', fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: 'Barlow' }}
+          />
+          <Line
+            type="monotone"
+            dataKey="ev"
+            stroke="#FF6B1A"
+            strokeWidth={2}
+            dot={{ fill: '#FF6B1A', r: 3, strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: '#FF6B1A' }}
+          />
+          <Tooltip
+            cursor={false}
+            contentStyle={{
+              background: 'rgba(20,22,28,0.95)',
+              border: '1px solid rgba(255,107,26,0.3)',
+              borderRadius: 8,
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 12,
+            }}
+            formatter={(value) => [`${value} mph`, 'Exit Velo']}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
 // ── Debrief Screen ─────────────────────────────────────────────────────────
 // Props:
 //   player           — { firstName, lastName } from TrackMan API, or null
@@ -725,6 +796,8 @@ export default function DebriefScreen({
                 >
                   {chart?.type === 'scatter_ev_la' ? (
                     <ScatterEVLA swings={rawSwings} />
+                  ) : chart?.type === 'trend_ev' ? (
+                    <TrendEV swings={rawSwings} />
                   ) : (
                     <div style={{
                       flex: 1, display: 'flex', flexDirection: 'column',
