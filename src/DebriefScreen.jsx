@@ -576,10 +576,13 @@ function BarDistance({ swings }) {
               fontFamily: "'Barlow', sans-serif",
               fontSize: 12,
             }}
-            labelFormatter={() => 'Distance Range'}
+            labelFormatter={(value) => `Distance: ${value} ft`}
             labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
             itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
-            formatter={(value) => [`${value}`, 'Swings']}
+            formatter={(value, name) => [
+              <span style={{ color: 'rgba(255,255,255,0.85)' }}>{value}</span>,
+              <span style={{ color: 'rgba(255,255,255,0.6)' }}>{name}</span>,
+            ]}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -748,6 +751,10 @@ function ZoneBreakdown({ swings }) {
               fontSize: 12,
             }}
             cursor={false}
+            formatter={(value, name) => [
+              <span style={{ color: 'rgba(255,255,255,0.85)' }}>{value}</span>,
+              <span style={{ color: 'rgba(255,255,255,0.6)' }}>{name}</span>,
+            ]}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -1119,22 +1126,22 @@ export default function DebriefScreen({
       <div style={{ flexShrink: 0, height: 56, display: 'flex', gap: 1 }}>
         {[
           {
-            label: 'Avg EV',
+            label: 'AVG EXIT VELO',
             value: avgEV != null ? `${avgEV} mph` : '—',
             highlight: avgEV != null && avgEV >= 88,
           },
           {
-            label: 'Avg LA',
+            label: 'AVG LAUNCH ANG.',
             value: avgLA != null ? `${avgLA}°` : '—',
             highlight: false,
           },
           {
-            label: 'In Zone',
+            label: 'PITCHES IN ZONE',
             value: inZone != null && total != null ? `${inZone}/${total}` : '—',
             highlight: false,
           },
           {
-            label: 'Top EV',
+            label: 'TOP EXIT VELO',
             value: topEV != null ? `${topEV} mph` : '—',
             highlight: topEV != null && topEV >= 95,
           },

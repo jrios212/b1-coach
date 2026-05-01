@@ -214,10 +214,13 @@ function BarDistance({ swings }) {
               style={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: 'Barlow Condensed, sans-serif' }} />
           </Bar>
           <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
-            labelFormatter={(value) => value}
+            labelFormatter={(value) => `Distance: ${value} ft`}
             labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
             itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
-            formatter={(value) => [`${value}`, 'Swings']} />
+            formatter={(value, name) => [
+              <span style={{ color: 'rgba(255,255,255,0.85)' }}>{value}</span>,
+              <span style={{ color: 'rgba(255,255,255,0.6)' }}>{name}</span>,
+            ]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -319,6 +322,10 @@ function ZoneBreakdown({ swings }) {
               fontSize: 12,
             }}
             cursor={false}
+            formatter={(value, name) => [
+              <span style={{ color: 'rgba(255,255,255,0.85)' }}>{value}</span>,
+              <span style={{ color: 'rgba(255,255,255,0.6)' }}>{name}</span>,
+            ]}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -836,10 +843,10 @@ export default function ConversationScreen({
           animation: revealed ? 'fadeUp 0.42s ease 0.32s both' : 'none',
         }}>
           {[
-            { label: 'Avg EV',  value: avgEV != null ? `${avgEV} mph` : '—',                          highlight: avgEV != null && avgEV >= 88 },
-            { label: 'Avg LA',  value: avgLA != null ? `${avgLA}°` : '—',                             highlight: false },
-            { label: 'In Zone', value: inZone != null && total != null ? `${inZone}/${total}` : '—',  highlight: false },
-            { label: 'Top EV',  value: topEV != null ? `${topEV} mph` : '—',                         highlight: topEV != null && topEV >= 95 },
+            { label: 'AVG EXIT VELO',    value: avgEV != null ? `${avgEV} mph` : '—',                          highlight: avgEV != null && avgEV >= 88 },
+            { label: 'AVG LAUNCH ANG.', value: avgLA != null ? `${avgLA}°` : '—',                             highlight: false },
+            { label: 'PITCHES IN ZONE', value: inZone != null && total != null ? `${inZone}/${total}` : '—',  highlight: false },
+            { label: 'TOP EXIT VELO',   value: topEV != null ? `${topEV} mph` : '—',                         highlight: topEV != null && topEV >= 95 },
           ].map((tile) => (
             <div key={tile.label} style={{
               flex: 1, display: 'flex', flexDirection: 'column',

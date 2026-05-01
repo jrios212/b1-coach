@@ -993,9 +993,10 @@ export default function App() {
               )
             )
             if (result.chart) {
-              setConversationCharts((prev) => {
-                if (prev.find((c) => c.type === result.chart)) return prev
-                return [...prev, { type: result.chart }]
+              setConversationCharts(() => {
+                const debrief = debriefContent?.charts ?? []
+                if (debrief.includes(result.chart)) return []
+                return [{ type: result.chart }]
               })
             }
           } finally {
