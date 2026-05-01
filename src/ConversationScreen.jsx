@@ -119,7 +119,7 @@ function ScatterEVLA({ swings }) {
         <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
           <ReferenceArea y1={25} y2={35} fill="#FF6B1A" fillOpacity={0.08} stroke="#FF6B1A" strokeOpacity={0.25} />
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="ev" type="number" domain={['auto', 'auto']}
+          <XAxis dataKey="ev" type="number" domain={[dataMin => dataMin - 3, dataMax => dataMax + 3]}
             tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
             label={{ value: 'EXIT VELOCITY (MPH)', position: 'insideBottom', offset: -15,
               style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
@@ -129,11 +129,12 @@ function ScatterEVLA({ swings }) {
               style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
           <ReferenceLine y={25} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
           <ReferenceLine y={35} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
+          <ReferenceLine x={88} stroke="#FF6B1A" strokeOpacity={0.35} strokeDasharray="4 4" />
           <Scatter data={data} name="Swings">
             {data.map((entry, i) => (
               <Cell key={i}
-                fill={entry.la >= 25 && entry.la <= 35 ? '#FF6B1A' : 'rgba(255,255,255,0.3)'}
-                fillOpacity={entry.la >= 25 && entry.la <= 35 ? 0.9 : 0.5} />
+                fill={entry.ev >= 88 && entry.la >= 25 && entry.la <= 35 ? '#FF6B1A' : 'rgba(255,255,255,0.3)'}
+                fillOpacity={entry.ev >= 88 && entry.la >= 25 && entry.la <= 35 ? 0.9 : 0.5} />
             ))}
           </Scatter>
           <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}

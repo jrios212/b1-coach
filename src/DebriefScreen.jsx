@@ -377,7 +377,7 @@ function ScatterEVLA({ swings }) {
           <XAxis
             dataKey="ev"
             type="number"
-            domain={['auto', 'auto']}
+            domain={[dataMin => dataMin - 3, dataMax => dataMax + 3]}
             tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
             label={{
               value: 'EXIT VELOCITY (MPH)',
@@ -401,12 +401,13 @@ function ScatterEVLA({ swings }) {
           />
           <ReferenceLine y={25} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
           <ReferenceLine y={35} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
+          <ReferenceLine x={88} stroke="#FF6B1A" strokeOpacity={0.35} strokeDasharray="4 4" />
           <Scatter data={data} name="Swings">
             {data.map((entry, i) => (
               <Cell
                 key={i}
-                fill={entry.la >= 25 && entry.la <= 35 ? '#FF6B1A' : 'rgba(255,255,255,0.3)'}
-                fillOpacity={entry.la >= 25 && entry.la <= 35 ? 0.9 : 0.5}
+                fill={entry.ev >= 88 && entry.la >= 25 && entry.la <= 35 ? '#FF6B1A' : 'rgba(255,255,255,0.3)'}
+                fillOpacity={entry.ev >= 88 && entry.la >= 25 && entry.la <= 35 ? 0.9 : 0.5}
               />
             ))}
           </Scatter>
