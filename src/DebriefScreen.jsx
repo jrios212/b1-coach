@@ -691,6 +691,120 @@ function SprayDirection({ swings }) {
   )
 }
 
+// ── Pitch location scatter (custom SVG) ──────────────────────────────────
+const SIDE_MIN = -1.5, SIDE_MAX = 1.5
+const HEIGHT_MIN = 0, HEIGHT_MAX = 5
+const SVG_X_MIN = 40, SVG_X_MAX = 260
+const SVG_Y_MIN = 20, SVG_Y_MAX = 240
+
+const mapX = (side)   => SVG_X_MIN + ((side   - SIDE_MIN)   / (SIDE_MAX   - SIDE_MIN))   * (SVG_X_MAX - SVG_X_MIN)
+const mapY = (height) => SVG_Y_MAX - ((height - HEIGHT_MIN) / (HEIGHT_MAX - HEIGHT_MIN)) * (SVG_Y_MAX - SVG_Y_MIN)
+
+const starPoints = (cx, cy, outerR = 6, innerR = 2.5) => {
+  const pts = []
+  for (let k = 0; k < 10; k++) {
+    const r = k % 2 === 0 ? outerR : innerR
+    const angle = (Math.PI / 5) * k - Math.PI / 2
+    pts.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`)
+  }
+  return pts.join(' ')
+}
+
+function PitchLocation({ swings, goalId }) {
+  const szX1 = mapX(-0.7), szX2 = mapX(0.7)
+  const szY1 = mapY(3.5),  szY2 = mapY(1.5)
+
+  const isGood = (sw) => {
+    const { exitSpeed, angle } = sw.hit.launch
+    if (goalId === 'power')   return exitSpeed >= 88 && angle >= 25 && angle <= 35
+    if (goalId === 'contact') return angle >= 10 && angle <= 20 && exitSpeed >= 85
+    if (goalId === 'popup')   return angle >= 5 && angle <= 35
+    return false
+  }
+
+  const renderDot = (sw, i) => {
+    const x = mapX(sw.plateLocSide)
+    const y = mapY(sw.plateLocHeight)
+    const dir = sw.hit.launch.direction
+
+    if (goalId === 'allfields') {
+      if (dir < -15) return <circle key={i} cx={x} cy={y} r={5} fill="#FF6B1A" fillOpacity={0.8} />
+      if (dir > 15) {
+        const pts = `${x},${y - 6} ${x - 5},${y + 4} ${x + 5},${y + 4}`
+        return <polygon key={i} points={pts} fill="rgba(180,180,255,0.8)" />
+      }
+      return (
+        <rect key={i} x={x - 4} y={y - 4} width={8} height={8}
+          fill="rgba(255,200,100,0.8)" transform={`rotate(45,${x},${y})`} />
+      )
+    }
+    if (goalId === 'open') {
+      return <circle key={i} cx={x} cy={y} r={5} fill="rgba(255,255,255,0.25)" />
+    }
+    return isGood(sw)
+      ? <polygon key={i} points={starPoints(x, y)} fill={ACCENT} />
+      : <circle  key={i} cx={x} cy={y} r={5} fill="rgba(255,255,255,0.25)" />
+  }
+
+  const showLegend = goalId !== 'open'
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+      <svg width="100%" height="100%" viewBox="0 0 300 270" preserveAspectRatio="xMidYMid meet">
+
+        {/* Strike zone rectangle */}
+        <rect
+          x={szX1} y={szY1} width={szX2 - szX1} height={szY2 - szY1}
+          fill={`rgba(255,107,26,0.06)`}
+          stroke={ACCENT} strokeOpacity={0.4} strokeWidth={1}
+          strokeDasharray="4 3"
+        />
+        <text x={(szX1 + szX2) / 2} y={szY1 - 4} textAnchor="middle"
+          fill={`rgba(255,107,26,0.5)`} fontSize="7.5" fontFamily="Barlow, sans-serif"
+          letterSpacing="0.05em">
+          STRIKE ZONE
+        </text>
+
+        {/* Axis labels */}
+        <text x={150} y={258} textAnchor="middle"
+          fill="rgba(255,255,255,0.25)" fontSize="8" fontFamily="Barlow, sans-serif"
+          letterSpacing="0.06em">
+          SIDE (FT)
+        </text>
+        <text x={12} y={130} textAnchor="middle"
+          fill="rgba(255,255,255,0.25)" fontSize="8" fontFamily="Barlow, sans-serif"
+          letterSpacing="0.06em"
+          transform="rotate(-90, 12, 130)">
+          HEIGHT (FT)
+        </text>
+
+        {/* Swings */}
+        {swings.map((sw, i) => renderDot(sw, i))}
+
+        {/* Legend */}
+        {showLegend && goalId === 'allfields' && (
+          <>
+            <circle cx={86} cy={264} r={5} fill="#FF6B1A" fillOpacity={0.8} />
+            <text x={97} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Pull</text>
+            <rect x={129} y={260} width={8} height={8} fill="rgba(255,200,100,0.8)" transform="rotate(45,133,264)" />
+            <text x={145} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Center</text>
+            <polygon points="192,259 187,268 197,268" fill="rgba(180,180,255,0.8)" />
+            <text x={203} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Oppo</text>
+          </>
+        )}
+        {showLegend && goalId !== 'allfields' && (
+          <>
+            <polygon points={starPoints(90, 264)} fill={ACCENT} />
+            <text x={101} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Good outcome</text>
+            <circle cx={192} cy={264} r={5} fill="rgba(255,255,255,0.25)" />
+            <text x={203} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Other</text>
+          </>
+        )}
+      </svg>
+    </div>
+  )
+}
+
 // ── Launch angle zone breakdown horizontal bar chart ──────────────────────
 function ZoneBreakdown({ swings }) {
   const inZone    = swings.filter((s) =>
@@ -1047,8 +1161,9 @@ export default function DebriefScreen({
                 scatter_ev_la:   'Launch Angle vs Exit Velocity',
                 trend_ev:        'Exit Velocity Trend',
                 bar_distance:    'Distance Distribution',
-                spray_direction: 'Spray Chart',
-                zone_breakdown:  'Pitches In Zone',
+                spray_direction:  'Spray Chart',
+                zone_breakdown:   'Pitches In Zone',
+                pitch_location:   'Pitch Location',
               }
               const label = CHART_LABELS[chart?.type] ?? 'Chart'
 
@@ -1070,6 +1185,8 @@ export default function DebriefScreen({
                     <SprayDirection swings={rawSwings} />
                   ) : chart?.type === 'zone_breakdown' ? (
                     <ZoneBreakdown swings={rawSwings} />
+                  ) : chart?.type === 'pitch_location' ? (
+                    <PitchLocation swings={rawSwings} goalId={goalId} />
                   ) : (
                     <div style={{
                       flex: 1, display: 'flex', flexDirection: 'column',

@@ -23,7 +23,7 @@ const GOALS = [
   {
     id: 'contact',
     label: 'Line Drives & Contact',
-    subtitle: 'Barrel rate · Sweet spot · Spray chart',
+    subtitle: 'Exit velocity · Launch angle · Spray chart',
     type: 'contact',
     tag: 'LA 10–15° · Hard Hit %',
     color: ACCENT,
@@ -41,7 +41,7 @@ const GOALS = [
   {
     id: 'popup',
     label: 'Reduce Pop-Ups',
-    subtitle: 'Attack angle · Swing path · Tee work',
+    subtitle: 'Launch angle · Direction · Exit velocity',
     type: 'popup',
     tag: 'LA < 0° ↓ · Drive more',
     color: ACCENT,
