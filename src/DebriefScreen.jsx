@@ -691,103 +691,64 @@ function SprayDirection({ swings }) {
   )
 }
 
-// ── Pitch location scatter (custom SVG) ──────────────────────────────────
-const SIDE_MIN = -1.2, SIDE_MAX = 1.2
-const HEIGHT_MIN = 0.5, HEIGHT_MAX = 4.5
-const SVG_X_MIN = 72, SVG_X_MAX = 268
-const SVG_Y_MIN = 20, SVG_Y_MAX = 340
-
-const mapX = (side)   => SVG_X_MIN + ((side   - SIDE_MIN)   / (SIDE_MAX   - SIDE_MIN))   * (SVG_X_MAX - SVG_X_MIN)
-const mapY = (height) => SVG_Y_MAX - ((height - HEIGHT_MIN) / (HEIGHT_MAX - HEIGHT_MIN)) * (SVG_Y_MAX - SVG_Y_MIN)
-
-const starPoints = (cx, cy, outerR = 6, innerR = 2.5) => {
-  const pts = []
-  for (let k = 0; k < 10; k++) {
-    const r = k % 2 === 0 ? outerR : innerR
-    const angle = (Math.PI / 5) * k - Math.PI / 2
-    pts.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`)
-  }
-  return pts.join(' ')
-}
-
+// ── Pitch location scatter (Recharts) ────────────────────────────────────
 function PitchLocation({ swings, goalId }) {
-  const szX1 = mapX(-0.7), szX2 = mapX(0.7)
-  const szY1 = mapY(3.5),  szY2 = mapY(1.5)
-
-  const isGood = (sw) => {
+  const data = swings.map((sw) => {
     const { exitSpeed, angle } = sw.hit.launch
-    if (goalId === 'power')   return exitSpeed >= 88 && angle >= 25 && angle <= 35
-    if (goalId === 'contact') return angle >= 10 && angle <= 20 && exitSpeed >= 85
-    if (goalId === 'popup')   return angle >= 5 && angle <= 35
-    return false
-  }
+    let outcome = false
+    if (goalId === 'power')   outcome = exitSpeed >= 88 && angle >= 25 && angle <= 35
+    if (goalId === 'contact') outcome = angle >= 10 && angle <= 20 && exitSpeed >= 85
+    if (goalId === 'popup')   outcome = angle >= 5 && angle <= 35
+    return { x: sw.plateLocSide, y: sw.plateLocHeight, exitSpeed, angle, direction: sw.hit.launch.direction, outcome }
+  })
 
-  const renderDot = (sw, i) => {
-    const x = mapX(sw.plateLocSide)
-    const y = mapY(sw.plateLocHeight)
-    const dir = sw.hit.launch.direction
-
+  const renderShape = ({ cx, cy, payload }) => {
     if (goalId === 'allfields') {
-      if (dir < -15) return <circle key={i} cx={x} cy={y} r={5} fill="#FF6B1A" fillOpacity={0.8} />
-      if (dir > 15) {
-        const pts = `${x},${y - 6} ${x - 5},${y + 4} ${x + 5},${y + 4}`
-        return <polygon key={i} points={pts} fill="rgba(180,180,255,0.8)" />
+      if (payload.direction < -15)
+        return <circle cx={cx} cy={cy} r={5} fill={ACCENT} fillOpacity={0.85} />
+      if (payload.direction > 15) {
+        const pts = `${cx},${cy - 6} ${cx - 5},${cy + 4} ${cx + 5},${cy + 4}`
+        return <polygon points={pts} fill="rgba(180,180,255,0.8)" fillOpacity={0.8} />
       }
-      return (
-        <rect key={i} x={x - 4} y={y - 4} width={8} height={8}
-          fill="rgba(255,200,100,0.8)" transform={`rotate(45,${x},${y})`} />
-      )
+      return <rect x={cx - 4} y={cy - 4} width={8} height={8} fill="rgba(255,200,100,0.8)" fillOpacity={0.8} transform={`rotate(45, ${cx}, ${cy})`} />
     }
-    if (goalId === 'open') {
-      return <circle key={i} cx={x} cy={y} r={5} fill="rgba(255,255,255,0.25)" />
-    }
-    return isGood(sw)
-      ? <polygon key={i} points={starPoints(x, y)} fill={ACCENT} />
-      : <circle  key={i} cx={x} cy={y} r={5} fill="rgba(255,255,255,0.25)" />
+    if (payload.outcome)
+      return <rect x={cx - 5} y={cy - 5} width={10} height={10} fill={ACCENT} fillOpacity={0.9} transform={`rotate(45, ${cx}, ${cy})`} />
+    return <circle cx={cx} cy={cy} r={5} fill="rgba(255,255,255,0.25)" fillOpacity={0.6} />
   }
-
-  const showLegend = goalId !== 'open'
 
   return (
     <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
-      <svg width="100%" height="100%" viewBox="0 0 340 380" preserveAspectRatio="xMidYMid meet">
-
-        {/* Strike zone rectangle */}
-        <rect
-          x={szX1} y={szY1} width={szX2 - szX1} height={szY2 - szY1}
-          fill={`rgba(255,107,26,0.06)`}
-          stroke={ACCENT} strokeOpacity={0.4} strokeWidth={1}
-          strokeDasharray="4 3"
-        />
-        <text x={(szX1 + szX2) / 2} y={szY1 - 4} textAnchor="middle"
-          fill={`rgba(255,107,26,0.5)`} fontSize="7.5" fontFamily="Barlow, sans-serif"
-          letterSpacing="0.05em">
-          STRIKE ZONE
-        </text>
-
-        {/* Swings */}
-        {swings.map((sw, i) => renderDot(sw, i))}
-
-        {/* Legend */}
-        {showLegend && goalId === 'allfields' && (
-          <>
-            <circle cx={90} cy={362} r={7.5} fill="#FF6B1A" fillOpacity={0.8} />
-            <text x={104} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Pull</text>
-            <rect x={164} y={356} width={12} height={12} fill="rgba(255,200,100,0.8)" transform="rotate(45,170,362)" />
-            <text x={180} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Center</text>
-            <polygon points="250,353 242.5,368 257.5,368" fill="rgba(180,180,255,0.8)" />
-            <text x={264} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Oppo</text>
-          </>
-        )}
-        {showLegend && goalId !== 'allfields' && (
-          <>
-            <polygon points={starPoints(107, 362, 9, 3.75)} fill={ACCENT} />
-            <text x={122} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Good outcome</text>
-            <circle cx={234} cy={362} r={7.5} fill="rgba(255,255,255,0.25)" />
-            <text x={248} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Other</text>
-          </>
-        )}
-      </svg>
+      <ResponsiveContainer width="100%" height="100%">
+        <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 10 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <XAxis dataKey="x" type="number" domain={[-1.5, 1.5]}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'Side (ft)', position: 'insideBottom', offset: -15, style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }}
+          />
+          <YAxis dataKey="y" type="number" domain={[0.5, 4.5]}
+            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+            label={{ value: 'Height (ft)', angle: -90, position: 'insideLeft', offset: 15, style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }}
+          />
+          <ReferenceArea x1={-0.7} x2={0.7} y1={1.5} y2={3.5}
+            fill={ACCENT} fillOpacity={0.08}
+            stroke={ACCENT} strokeOpacity={0.4} strokeDasharray="4 4"
+            label={{ value: 'Strike Zone', position: 'insideTop', fontSize: 9, fill: ACCENT, opacity: 0.6 }}
+          />
+          <Tooltip
+            cursor={false}
+            contentStyle={{ background: 'rgba(14,15,20,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
+            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
+            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+            formatter={(value, name) => {
+              if (name === 'x') return [`${Number(value).toFixed(2)} ft`, 'Side']
+              if (name === 'y') return [`${Number(value).toFixed(2)} ft`, 'Height']
+              return null
+            }}
+          />
+          <Scatter data={data} shape={renderShape} />
+        </ScatterChart>
+      </ResponsiveContainer>
     </div>
   )
 }
