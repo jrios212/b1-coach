@@ -752,7 +752,7 @@ export default function App() {
           setSessionHistory((prev) =>
             prev.map((s) =>
               s.sessionNumber === sessionNumber
-                ? { ...s, messages: [{ role: 'coach', content: '__tips__', tips: result.nextSessionTips }] }
+                ? { ...s, messages: [{ role: 'coach', content: '__tips__', tipsIntro: result.tipsIntro ?? null, tips: result.nextSessionTips }] }
                 : s
             )
           )

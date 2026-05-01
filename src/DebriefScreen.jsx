@@ -247,7 +247,7 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
                   fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
                   color: 'rgba(255,255,255,0.9)',
                 }}>
-                  <div style={{ marginBottom: 8 }}>Here are your top priorities for next session:</div>
+                  {m.tipsIntro && <div style={{ marginBottom: 8 }}>{m.tipsIntro}</div>}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {(m.tips ?? []).map((tip, j) => (
                       <div key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
