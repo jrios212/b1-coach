@@ -99,6 +99,8 @@ export async function generateDebrief({ goal, player, sessions, viewingSessionNu
   const userMessage = `Player: ${player.firstName}
 Goal: ${goal.label}
 
+Note: All sessions shown here happened during the same practice day, one after another. Do not use words like "today" or "yesterday" when comparing sessions. Refer to sessions by number only, like "last session" or "Session 1."
+
 ${filteredSessions.map((s) => `Session ${s.sessionNumber}:
 - Avg Exit Velocity: ${s.stats.avgExitVelocity} mph
 - Avg Launch Angle: ${s.stats.avgLaunchAngle} degrees
