@@ -749,6 +749,27 @@ function PitchLocation({ swings, goalId }) {
           <Scatter data={data} shape={renderShape} />
         </ScatterChart>
       </ResponsiveContainer>
+      {goalId === 'allfields' && (
+        <div style={{
+          display: 'flex', justifyContent: 'center', gap: 16,
+          marginTop: 6,
+        }}>
+          {[
+            { label: 'Pull',   color: ACCENT,                    shape: 'circle'   },
+            { label: 'Center', color: 'rgba(255,200,100,0.8)',   shape: 'diamond'  },
+            { label: 'Oppo',   color: 'rgba(180,180,255,0.8)',   shape: 'triangle' },
+          ].map(({ label, color, shape }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <svg width="12" height="12" viewBox="0 0 12 12">
+                {shape === 'circle'   && <circle cx="6" cy="6" r="5" fill={color} />}
+                {shape === 'diamond'  && <rect x="1" y="1" width="10" height="10" fill={color} transform="rotate(45, 6, 6)" />}
+                {shape === 'triangle' && <polygon points="6,1 11,11 1,11" fill={color} />}
+              </svg>
+              <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
