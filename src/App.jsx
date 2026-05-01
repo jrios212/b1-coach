@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import LiveSessionScreen from './LiveSessionScreen'
 import DebriefScreen from './DebriefScreen'
-import ConversationScreen from './ConversationScreen'
 import { generateDebrief, sendChatMessage } from './coachApi'
 
 // ── Goal definitions ───────────────────────────────────────────────────────
@@ -669,11 +668,6 @@ export default function App() {
 
   const [sessionHistory, setSessionHistory] = useState([])
   const [viewingSession, setViewingSession] = useState(null)
-  const [debriefContent, setDebriefContent] = useState(null)
-  const [conversationMessages, setConversationMessages] = useState([])
-  const [conversationStats, setConversationStats] = useState(null)
-  const [conversationCharts, setConversationCharts] = useState([])
-  const [conversationLoading, setConversationLoading] = useState(false)
 
   const computeStats = (swings) => {
     const total = swings.length
@@ -747,7 +741,6 @@ export default function App() {
       viewingSessionNumber: sessionNumber,
     })
       .then((result) => {
-        setDebriefContent(result)
         if (result.nextSessionTips?.length > 0) {
           setSessionHistory((prev) =>
             prev.map((s) =>
@@ -757,10 +750,16 @@ export default function App() {
             )
           )
         }
+        setSessionHistory((prev) =>
+          prev.map((s) =>
+            s.sessionNumber === sessionNumber
+              ? { ...s, debrief: result }
+              : s
+          )
+        )
         setScreen('debrief')
       })
       .catch(() => {
-        setDebriefContent(null)
         setScreen('debrief')
       })
   }
@@ -884,6 +883,7 @@ export default function App() {
 
   if (screen === 'debrief') {
     const viewed = sessionHistory.find((s) => s.sessionNumber === viewingSession) ?? sessionHistory.at(-1)
+    const viewedDebrief = viewed?.debrief ?? null
 
     const rawSwings = viewed?.swings ?? []
     const topEV = viewed?.swings
@@ -905,16 +905,11 @@ export default function App() {
           goalId={selectedGoal?.id}
           goalLabel={selectedGoal?.label}
           sessionData={viewed?.stats ?? null}
-          coachingSummary={debriefContent?.coachingSummary ?? null}
-          whatThisMeans={debriefContent?.whatThisMeans ?? null}
-          charts={debriefContent?.charts ?? []}
+          coachingSummary={viewedDebrief?.coachingSummary ?? null}
+          whatThisMeans={viewedDebrief?.whatThisMeans ?? null}
+          charts={viewedDebrief?.charts ?? []}
           sessions={sessions}
           onSessionToggle={(num) => setViewingSession(num)}
-          onExpandChat={() => {
-            setConversationMessages(viewed?.messages ?? [])
-            setConversationStats(viewed?.stats ?? null)
-            setScreen('conversation')
-          }}
           onHome={handleHome}
           chatMessages={viewed?.messages ?? []}
           onChatUpdate={(newMessages) =>
@@ -937,12 +932,15 @@ export default function App() {
             setScreen('live')
           }}
           sessionContext={sessionContext}
-          onChartSignal={(chartKey, currentMessages) => {
+          onChartSignal={(chartKey) => {
             if (chartKey) {
-              setConversationMessages(currentMessages ?? [])
-              setConversationStats(viewed?.stats ?? null)
-              setConversationCharts(chartKey ? [{ type: chartKey }] : [])
-              setScreen('conversation')
+              setSessionHistory((prev) =>
+                prev.map((s) =>
+                  s.sessionNumber === viewed?.sessionNumber
+                    ? { ...s, debrief: { ...s.debrief, charts: [s.debrief?.charts?.[0] ?? null, chartKey] } }
+                    : s
+                )
+              )
             }
           }}
           rawSwings={rawSwings}
@@ -952,57 +950,4 @@ export default function App() {
     )
   }
 
-  return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <ConversationScreen
-        player={player}
-        sessionNumber={viewingSession ?? sessionNumber}
-        goalId={selectedGoal?.id ?? 'power'}
-        goalLabel={selectedGoal?.label ?? 'Power & Home Runs'}
-        messages={conversationMessages}
-        charts={[
-          ...(debriefContent?.charts?.map((key) => ({ type: key })) ?? []),
-          ...conversationCharts,
-        ]}
-        sessionStats={conversationStats}
-        topEV={conversationStats ? Math.max(...(sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings.map((s) => s.hit.launch.exitSpeed) ?? [0])) : null}
-        swings={sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings ?? []}
-        onSendMessage={async (msg) => {
-          const updatedMessages = [...conversationMessages, { role: 'user', content: msg }]
-          setConversationMessages(updatedMessages)
-          setConversationLoading(true)
-          try {
-            const result = await sendChatMessage({
-              goal: selectedGoal,
-              player,
-              sessions: sessionHistory.filter((s) => s.sessionNumber <= (viewingSession ?? sessionNumber)),
-              viewingSessionNumber: viewingSession ?? sessionNumber,
-              messages: updatedMessages,
-            })
-            const finalMessages = [...updatedMessages, { role: 'coach', content: result.message }]
-            setConversationMessages(finalMessages)
-            setSessionHistory(prev =>
-              prev.map(s =>
-                s.sessionNumber === (viewingSession ?? sessionNumber)
-                  ? { ...s, messages: finalMessages }
-                  : s
-              )
-            )
-            if (result.chart) {
-              setConversationCharts(() => {
-                const debrief = debriefContent?.charts ?? []
-                if (debrief.includes(result.chart)) return []
-                return [{ type: result.chart }]
-              })
-            }
-          } finally {
-            setConversationLoading(false)
-          }
-        }}
-        onCollapse={() => setScreen('debrief')}
-        onHome={handleHome}
-        isLoading={conversationLoading}
-      />
-    </div>
-  )
 }

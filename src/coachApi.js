@@ -62,7 +62,7 @@ Respond ONLY with valid JSON matching this exact shape, no preamble, no markdown
   "chart": "chart_key or null"
 }
 
-Available chart keys: scatter_ev_la, bar_distance, spray_direction, trend_ev, zone_breakdown. Only include a chart key if it directly helps answer the player's question. Otherwise set chart to null.`
+Available chart keys: scatter_ev_la, bar_distance, spray_direction, trend_ev, zone_breakdown, pitch_location. Only include a chart key if it directly helps answer the player's question. Otherwise set chart to null.`
 
 async function callApi(body) {
   const url = '/api/coach'

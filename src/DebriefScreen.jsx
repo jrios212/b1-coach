@@ -143,7 +143,7 @@ function Panel({ label, labelColor = 'rgba(255,255,255,0.5)', headerRight, child
 }
 
 // ── Virtual Coach chat panel ───────────────────────────────────────────────
-function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessionContext, onChartSignal = null }) {
+function ChatPanel({ messages = [], onMessagesChange, delay, sessionContext, onChartSignal = null }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
@@ -174,31 +174,10 @@ function ChatPanel({ messages = [], onMessagesChange, onExpandChat, delay, sessi
       })
   }
 
-  const expandIcon = (
-    <button
-      onClick={onExpandChat}
-      title="Expand chat"
-      style={{
-        width: 24, height: 24, borderRadius: 6, border: 'none',
-        background: 'rgba(255,255,255,0.06)',
-        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0, transition: 'background 0.15s',
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-    >
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-        <path d="M1 7v3h3M10 4V1H7M1 4V1h3M10 7v3H7"
-          stroke="rgba(255,255,255,0.45)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </button>
-  )
-
   return (
     <Panel
       label="Virtual Coach"
       labelColor={ACCENT}
-      headerRight={expandIcon}
       delay={delay}
       style={{ flex: 1, width: '100%' }}
     >
@@ -858,7 +837,6 @@ function ZoneBreakdown({ swings }) {
 //   charts           — array of { type, data } objects (up to 2); rendered as placeholders
 //   sessions         — array of session numbers available, e.g. [1, 2, 3]
 //   onSessionToggle  — callback(sessionNumber)
-//   onExpandChat     — callback for the expand icon in the Virtual Coach panel
 //   rawSwings        — array of swing objects for the Raw Data modal
 //   topEV            — number, max exit velocity from the session
 export default function DebriefScreen({
@@ -872,7 +850,6 @@ export default function DebriefScreen({
   charts = [],
   sessions = [],
   onSessionToggle,
-  onExpandChat,
   onHome = null,
   onNewSession = null,
   chatMessages = [],
@@ -1201,7 +1178,6 @@ export default function DebriefScreen({
           <ChatPanel
             messages={chatMessages}
             onMessagesChange={onChatUpdate}
-            onExpandChat={onExpandChat}
             delay={0.32}
             sessionContext={sessionContext}
             onChartSignal={onChartSignal}
