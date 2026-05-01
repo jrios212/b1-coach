@@ -11,10 +11,12 @@ Rules:
 - Never make the player feel bad or use harsh criticism
 - Be honest but always constructive
 - Only reference specific numbers that appear in the session data. Never invent or estimate metrics that were not provided.
+- Write all content at an eighth-grade reading level. Short sentences, plain words, no jargon.
+- Never use em-dashes.
 
 For tipsIntro: Write one short sentence the way a coach would open after practice — warm but direct. Reference how the session went if it was notable. Example: "Good work out there — two things to focus on before next time." or "Tough day, but here's what we build on." One sentence only.
 
-For nextSessionTips: Write each tip the way a coach would say it out loud walking off the field, not as a written recommendation. Reference one specific number, then give one concrete thing to try. Short enough that a 16-year-old remembers it in the car ride home. Bad: "Your average launch angle suggests you should optimize your swing path." Good: "Six of your swings were flat, under 20 degrees. Stay through the ball a little longer and let's see if we can push that above 10 next time."
+For nextSessionTips: Write each tip the way a coach would say it out loud walking off the field, not as a written recommendation. Reference one specific number, then give one concrete thing to try. Three sentences per tip, no exceptions. First sentence is an observation referencing specific numbers from the data. (ex: You only hit to the opposite field on swings 9, 12, and 14, and two of those were your weakest swings at 83 and 86 mph.) Second sentence translates what that means in baseball terms. (ex: That tells me you are reaching for those instead of staying through the ball.) Third sentence is one concrete action to take next session. (ex: Try letting the ball travel a little deeper and driving it the other way with some authority.) No fourth sentence under any circumstances.
 
 If multiple sessions are provided, compare the current session to prior sessions and call out specific improvements or regressions by number.
 
@@ -101,6 +103,9 @@ ${filteredSessions.map((s) => `Session ${s.sessionNumber}:
 - Avg Exit Velocity: ${s.stats.avgExitVelocity} mph
 - Avg Launch Angle: ${s.stats.avgLaunchAngle} degrees
 - Pitches in strike zone: ${s.stats.inZoneCount}/${s.stats.totalSwings} (strike zone = height 1.5–3.5ft, side –0.7 to 0.7ft — full per-swing pitch coordinates included above)
+- Swings with launch angle strictly below 15 degrees (not including 15): ${s.swings.filter(sw => sw.hit.launch.angle < 15).length} swings — numbers: ${s.swings.map((sw, i) => sw.hit.launch.angle < 15 ? i + 1 : null).filter(Boolean).join(', ')}
+- Swings with launch angle in power zone 25 to 35 degrees inclusive: ${s.swings.filter(sw => sw.hit.launch.angle >= 25 && sw.hit.launch.angle <= 35).length} swings
+- Top 3 exit velocities: ${[...s.swings].sort((a, b) => b.hit.launch.exitSpeed - a.hit.launch.exitSpeed).slice(0, 3).map(sw => sw.hit.launch.exitSpeed).join(', ')} mph
 - Individual swings: ${s.swings.map((sw, i) => `Swing ${i + 1}: ${sw.hit.launch.exitSpeed}mph EV, ${sw.hit.launch.angle}° LA, ${sw.hit.launch.direction}° direction, ${sw.hit.landing.distance}ft distance, pitch height ${sw.plateLocHeight}ft / pitch side ${sw.plateLocSide}ft`).join(' | ')}`
   ).join('\n\n')}
 
