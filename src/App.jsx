@@ -941,11 +941,7 @@ export default function App() {
             if (chartKey) {
               setConversationMessages(currentMessages ?? [])
               setConversationStats(viewed?.stats ?? null)
-              setConversationCharts(prev => {
-                if (!chartKey) return prev
-                if (prev.find(c => c.type === chartKey)) return prev
-                return [...prev, { type: chartKey }]
-              })
+              setConversationCharts(chartKey ? [{ type: chartKey }] : [])
               setScreen('conversation')
             }
           }}
@@ -966,7 +962,7 @@ export default function App() {
         messages={conversationMessages}
         charts={[
           ...(debriefContent?.charts?.map((key) => ({ type: key })) ?? []),
-          ...conversationCharts.filter((c) => !debriefContent?.charts?.includes(c.type)),
+          ...conversationCharts,
         ]}
         sessionStats={conversationStats}
         topEV={conversationStats ? Math.max(...(sessionHistory.find((s) => s.sessionNumber === (viewingSession ?? sessionNumber))?.swings.map((s) => s.hit.launch.exitSpeed) ?? [0])) : null}
