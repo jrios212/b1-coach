@@ -1226,7 +1226,7 @@ export default function DebriefScreen({
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['#', 'Exit Velocity', 'Launch Angle', 'Direction', 'Distance'].map((col, i) => (
+                    {['#', 'Exit Velocity', 'Launch Angle', 'Direction', 'Distance', 'Zone'].map((col, i) => (
                       <th
                         key={col}
                         style={{
@@ -1278,6 +1278,14 @@ export default function DebriefScreen({
                         <td style={cellStyle}>{la}°</td>
                         <td style={cellStyle}>{dir > 0 ? '+' : ''}{dir}°</td>
                         <td style={cellStyle}>{dist} ft</td>
+                        <td style={{
+                          ...cellStyle,
+                          textAlign: 'center',
+                          color: inZoneRow ? ACCENT : 'rgba(255,255,255,0.35)',
+                          fontWeight: inZoneRow ? 700 : 500,
+                        }}>
+                          {inZoneRow ? 'In' : 'Out'}
+                        </td>
                       </tr>
                     )
                   })}
