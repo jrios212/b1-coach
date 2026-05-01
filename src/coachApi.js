@@ -10,6 +10,7 @@ Rules:
 - Speak to a high school or college-aged player, not a professional
 - Never make the player feel bad or use harsh criticism
 - Be honest but always constructive
+- Only reference specific numbers that appear in the session data. Never invent or estimate metrics that were not provided.
 
 For Try This Next Session tips: each tip MUST reference a specific metric or pattern visible in the session numbers. Never give generic advice. Bad: 'Work on your launch angle.' Good: 'You had 6 swings below 20 degrees — try keeping your hands inside the ball longer to get that number above 10 next session.'
 
@@ -46,6 +47,8 @@ Rules:
 - If the player asks about a prior session, use that session's data
 - Never make the player feel bad
 - If showing a chart would genuinely help answer the question, include a chart key
+- Only reference specific numbers that appear in the session data. Never invent or estimate metrics that were not provided.
+- inZoneCount is the number of pitches that landed in the strike zone by location — it has nothing to do with launch angle or whether the player swung well
 
 Respond ONLY with valid JSON matching this exact shape, no preamble, no markdown fences:
 {
@@ -93,7 +96,7 @@ Goal: ${goal.label}
 ${filteredSessions.map((s) => `Session ${s.sessionNumber}:
 - Avg Exit Velocity: ${s.stats.avgExitVelocity} mph
 - Avg Launch Angle: ${s.stats.avgLaunchAngle} degrees
-- In Zone: ${s.stats.inZoneCount}/${s.stats.totalSwings} swings
+- In Zone: ${s.stats.inZoneCount}/${s.stats.totalSwings} pitches landed in the strike zone (pitch location only — not related to launch angle or swing outcome)
 - Individual swings (exitSpeed mph, angle degrees): ${s.swings.map((sw) => `${sw.hit.launch.exitSpeed}mph/${sw.hit.launch.angle}°`).join(', ')}`
   ).join('\n\n')}
 
@@ -116,7 +119,7 @@ Goal: ${goal.label}
 ${filteredSessions.map((s) => `Session ${s.sessionNumber}:
 - Avg Exit Velocity: ${s.stats.avgExitVelocity} mph
 - Avg Launch Angle: ${s.stats.avgLaunchAngle} degrees
-- In Zone: ${s.stats.inZoneCount}/${s.stats.totalSwings} swings`
+- In Zone: ${s.stats.inZoneCount}/${s.stats.totalSwings} pitches landed in the strike zone (pitch location only — not related to launch angle or swing outcome)`
   ).join('\n\n')}
 
 Current session being viewed: Session ${viewingSessionNumber}

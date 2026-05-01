@@ -12,7 +12,7 @@ const CHART_LABELS = {
   trend_ev:        'Exit Velocity Trend',
   bar_distance:    'Distance Distribution',
   spray_direction: 'Spray Chart',
-  zone_breakdown:  'Pitch Zone Contact',
+  zone_breakdown:  'Pitches In Zone',
 }
 
 // ── TrackMan logo ──────────────────────────────────────────────────────────
@@ -286,8 +286,8 @@ function ZoneBreakdown({ swings }) {
   ).length
   const outOfZone = swings.length - inZone
   const data = [
-    { label: 'In Zone',     count: inZone },
-    { label: 'Out of Zone', count: outOfZone },
+    { label: 'In Strike Zone', count: inZone },
+    { label: 'Outside Zone',   count: outOfZone },
   ]
   return (
     <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
@@ -298,20 +298,28 @@ function ZoneBreakdown({ swings }) {
             tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
             label={{ value: 'SWINGS', position: 'insideBottom', offset: -15,
               style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }} />
-          <YAxis type="category" dataKey="label" width={72}
+          <YAxis type="category" dataKey="label" width={90}
             tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Barlow, sans-serif' }} />
           <Bar dataKey="count" radius={[0, 3, 3, 0]}>
             {data.map((entry, i) => (
-              <Cell key={i} fill={entry.label === 'In Zone' ? '#FF6B1A' : 'rgba(255,107,26,0.3)'} />
+              <Cell key={i} fill={entry.label === 'In Strike Zone' ? '#FF6B1A' : 'rgba(255,107,26,0.3)'} />
             ))}
             <LabelList dataKey="count" position="right"
               style={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Barlow Condensed, sans-serif' }} />
           </Bar>
-          <Tooltip cursor={false} contentStyle={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
-            labelFormatter={() => 'Distance Range'}
+          <Tooltip
+            labelFormatter={(value) => value}
             labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
             itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
-            formatter={(value) => [`${value}`, 'Swings']} />
+            contentStyle={{
+              background: 'rgba(14,15,20,0.95)',
+              border: '1px solid rgba(255,107,26,0.3)',
+              borderRadius: 8,
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 12,
+            }}
+            cursor={false}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

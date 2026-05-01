@@ -913,7 +913,6 @@ export default function App() {
           onExpandChat={() => {
             setConversationMessages(viewed?.messages ?? [])
             setConversationStats(viewed?.stats ?? null)
-            setConversationCharts([])
             setScreen('conversation')
           }}
           onHome={handleHome}
