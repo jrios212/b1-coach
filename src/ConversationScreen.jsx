@@ -13,7 +13,7 @@ const CHART_LABELS = {
   bar_distance:    'Distance Distribution',
   spray_direction:  'Spray Chart',
   zone_breakdown:   'Pitches In Zone',
-  pitch_location:   'Pitch Location',
+  pitch_location:   'Pitch Location vs. Outcome',
 }
 
 // ── TrackMan logo ──────────────────────────────────────────────────────────
@@ -335,10 +335,10 @@ function ZoneBreakdown({ swings }) {
 }
 
 // ── Pitch location scatter (custom SVG) ──────────────────────────────────
-const SIDE_MIN = -1.5, SIDE_MAX = 1.5
-const HEIGHT_MIN = 0, HEIGHT_MAX = 5
-const SVG_X_MIN = 40, SVG_X_MAX = 260
-const SVG_Y_MIN = 20, SVG_Y_MAX = 240
+const SIDE_MIN = -1.2, SIDE_MAX = 1.2
+const HEIGHT_MIN = 0.5, HEIGHT_MAX = 4.5
+const SVG_X_MIN = 72, SVG_X_MAX = 268
+const SVG_Y_MIN = 20, SVG_Y_MAX = 340
 
 const mapX = (side)   => SVG_X_MIN + ((side   - SIDE_MIN)   / (SIDE_MAX   - SIDE_MIN))   * (SVG_X_MAX - SVG_X_MIN)
 const mapY = (height) => SVG_Y_MAX - ((height - HEIGHT_MIN) / (HEIGHT_MAX - HEIGHT_MIN)) * (SVG_Y_MAX - SVG_Y_MIN)
@@ -393,7 +393,7 @@ function PitchLocation({ swings, goalId }) {
 
   return (
     <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
-      <svg width="100%" height="100%" viewBox="0 0 300 270" preserveAspectRatio="xMidYMid meet">
+      <svg width="100%" height="100%" viewBox="0 0 340 380" preserveAspectRatio="xMidYMid meet">
         <rect
           x={szX1} y={szY1} width={szX2 - szX1} height={szY2 - szY1}
           fill="rgba(255,107,26,0.06)"
@@ -405,34 +405,23 @@ function PitchLocation({ swings, goalId }) {
           letterSpacing="0.05em">
           STRIKE ZONE
         </text>
-        <text x={150} y={258} textAnchor="middle"
-          fill="rgba(255,255,255,0.25)" fontSize="8" fontFamily="Barlow, sans-serif"
-          letterSpacing="0.06em">
-          SIDE (FT)
-        </text>
-        <text x={12} y={130} textAnchor="middle"
-          fill="rgba(255,255,255,0.25)" fontSize="8" fontFamily="Barlow, sans-serif"
-          letterSpacing="0.06em"
-          transform="rotate(-90, 12, 130)">
-          HEIGHT (FT)
-        </text>
         {swings.map((sw, i) => renderDot(sw, i))}
         {showLegend && goalId === 'allfields' && (
           <>
-            <circle cx={86} cy={264} r={5} fill="#FF6B1A" fillOpacity={0.8} />
-            <text x={97} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Pull</text>
-            <rect x={129} y={260} width={8} height={8} fill="rgba(255,200,100,0.8)" transform="rotate(45,133,264)" />
-            <text x={145} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Center</text>
-            <polygon points="192,259 187,268 197,268" fill="rgba(180,180,255,0.8)" />
-            <text x={203} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Oppo</text>
+            <circle cx={90} cy={362} r={7.5} fill="#FF6B1A" fillOpacity={0.8} />
+            <text x={104} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Pull</text>
+            <rect x={164} y={356} width={12} height={12} fill="rgba(255,200,100,0.8)" transform="rotate(45,170,362)" />
+            <text x={180} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Center</text>
+            <polygon points="250,353 242.5,368 257.5,368" fill="rgba(180,180,255,0.8)" />
+            <text x={264} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Oppo</text>
           </>
         )}
         {showLegend && goalId !== 'allfields' && (
           <>
-            <polygon points={starPoints(90, 264)} fill={ACCENT} />
-            <text x={101} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Good outcome</text>
-            <circle cx={192} cy={264} r={5} fill="rgba(255,255,255,0.25)" />
-            <text x={203} y={268} fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="Barlow, sans-serif">Other</text>
+            <polygon points={starPoints(107, 362, 9, 3.75)} fill={ACCENT} />
+            <text x={122} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Good outcome</text>
+            <circle cx={234} cy={362} r={7.5} fill="rgba(255,255,255,0.25)" />
+            <text x={248} y={367} fill="rgba(255,255,255,0.4)" fontSize="11" fontFamily="Barlow, sans-serif">Other</text>
           </>
         )}
       </svg>
