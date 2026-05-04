@@ -645,6 +645,10 @@ function SprayDirection({ swings }) {
     )
   }
 
+  const distances = swings.map(s => s.hit.landing.distance)
+  const minDist = Math.min(...distances)
+  const maxDist = Math.max(...distances)
+
   return (
     <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
       <svg width="100%" height="100%" viewBox="0 0 300 222" preserveAspectRatio="xMidYMid meet">
@@ -670,7 +674,7 @@ function SprayDirection({ swings }) {
         {swings.map((swing, i) => {
           const dir  = swing.hit.launch.direction
           const dist = swing.hit.landing.distance
-          const scale = Math.min(dist / 420, 1) * 140
+          const scale = maxDist === minDist ? 120 : 70 + ((dist - minDist) / (maxDist - minDist)) * 100
           const rad = (dir * Math.PI) / 180
           const x = cx + scale * Math.sin(rad)
           const y = cy - scale * Math.cos(rad)
