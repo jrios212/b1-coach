@@ -696,19 +696,19 @@ export default function App() {
     return Array.from({ length: 15 }, () => {
       const ev = Math.round(Math.max(72, Math.min(105, sessionEV + (Math.random() - 0.5) * 16 * varianceFactor)))
       const la = Math.round(Math.max(-5, Math.min(45, sessionLA + (Math.random() - 0.5) * 20 * varianceFactor)))
-      const dir = Math.round((Math.random() - 0.5) * 50 * varianceFactor)
+      const dir = Math.round((Math.random() - 0.45) * 70 * varianceFactor)
       const dist = Math.round(ev * 4.0 + la * 1.8)
       const inZonePitch = Math.random() < 0.70
       const plateLocHeight = inZonePitch
         ? 1.5 + Math.random() * 2.0
         : Math.random() < 0.5
           ? 0.5 + Math.random() * 0.9
-          : 3.6 + Math.random() * 0.8
+          : 3.6 + Math.random() * 0.5
       const plateLocSide = inZonePitch
         ? -0.7 + Math.random() * 1.4
         : Math.random() < 0.5
-          ? -1.3 - Math.random() * 0.4
-          : 0.8 + Math.random() * 0.4
+          ? -0.8 - Math.random() * 0.3
+          : 0.8 + Math.random() * 0.3
       return { plateLocHeight: Math.round(plateLocHeight * 100) / 100, plateLocSide: Math.round(plateLocSide * 100) / 100, hit: { launch: { exitSpeed: ev, angle: la, direction: dir }, landing: { distance: dist } } }
     })
   }
