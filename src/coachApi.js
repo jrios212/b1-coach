@@ -55,6 +55,8 @@ Rules:
 - If showing a chart would genuinely help answer the question, include a chart key
 - Only reference specific numbers that appear in the session data. Never invent or estimate metrics that were not provided.
 - inZoneCount is the number of pitches that landed in the strike zone by location — it has nothing to do with launch angle or whether the player swung well
+- Write at an eighth-grade reading level. Short sentences, plain words, no jargon.
+- Never use em-dashes.
 
 Respond ONLY with valid JSON matching this exact shape, no preamble, no markdown fences:
 {
