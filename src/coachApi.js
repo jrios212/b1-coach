@@ -138,6 +138,19 @@ ${filteredSessions.map((s) => `Session ${s.sessionNumber}:
 - Individual swings: ${s.swings.map((sw, i) => `Swing ${i + 1}: ${sw.hit.launch.exitSpeed}mph EV, ${sw.hit.launch.angle}° LA, ${sw.hit.launch.direction}° direction, ${sw.hit.landing.distance}ft distance, pitch height ${sw.plateLocHeight}ft / pitch side ${sw.plateLocSide}ft`).join(' | ')}`
   ).join('\n\n')}
 
+${filteredSessions.length > 1 ? `Prior session conversations:
+${filteredSessions
+  .filter(s => s.sessionNumber < viewingSessionNumber)
+  .map(s => {
+    const realMessages = (s.messages ?? []).filter(m => m.content !== '__tips__')
+    if (realMessages.length === 0) return null
+    return `Session ${s.sessionNumber} chat summary:\n${realMessages
+      .map(m => `${m.role === 'user' ? 'Player' : 'Coach'}: ${m.content}`)
+      .join('\n')}`
+  })
+  .filter(Boolean)
+  .join('\n\n')}` : ''}
+
 Current session being viewed: Session ${viewingSessionNumber}
 
 Conversation so far:
