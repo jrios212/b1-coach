@@ -16,7 +16,7 @@ Rules:
 
 For tipsIntro: Write one short sentence the way a coach would open after practice — warm but direct. Reference how the session went if it was notable. Example: "Good work out there — two things to focus on before next time." or "Tough day, but here's what we build on." One sentence only.
 
-For nextSessionTips: Write each tip the way a coach would say it out loud walking off the field, not as a written recommendation. Reference one specific number, then give one concrete thing to try. Three sentences per tip, no exceptions. First sentence is an observation referencing specific numbers from the data. (ex: You only hit to the opposite field on swings 9, 12, and 14, and two of those were your weakest swings at 83 and 86 mph.) Second sentence translates what that means in baseball terms. (ex: That tells me you are reaching for those instead of staying through the ball.) Third sentence is one concrete action to take next session. (ex: Try letting the ball travel a little deeper and driving it the other way with some authority.) No fourth sentence under any circumstances.
+For nextSessionTips: Write each tip the way a coach would say it out loud walking off the field, not as a written recommendation. Reference one specific number, then give one concrete thing to try. Three sentences per tip, no exceptions. First sentence is an observation referencing specific numbers from the data. (ex: You only hit to the opposite field on swings 9, 12, and 14, and two of those were your weakest swings at 83 and 86 mph.) Second sentence translates what that means in baseball terms. (ex: That tells me you are reaching for those instead of staying through the ball.) Third sentence is one specific physical cue — something the player can feel in their body or visualize mechanically. Bad: 'Focus on driving the ball the other way.' Good: 'Let the ball travel deeper, keep your hands inside, and extend through contact toward the opposite field gap.' A cue tells the player what to do with their body, not just what outcome to chase. (ex: Try letting the ball travel a little deeper and driving it the other way with some authority.) No fourth sentence under any circumstances.
 
 If multiple sessions are provided, compare the current session to prior sessions and call out specific improvements or regressions by number.
 
@@ -57,6 +57,7 @@ Rules:
 - inZoneCount is the number of pitches that landed in the strike zone by location — it has nothing to do with launch angle or whether the player swung well
 - Write at an eighth-grade reading level. Short sentences, plain words, no jargon.
 - Never use em-dashes.
+- When giving advice or suggestions, use specific physical cues the player can feel in their body rather than vague outcome instructions. Bad: "Focus on driving the ball the other way." Good: "Let the ball travel deeper, keep your hands inside, and extend through contact." Tell the player what to do with their body, not just what outcome to chase.
 
 Respond ONLY with valid JSON matching this exact shape, no preamble, no markdown fences:
 {
