@@ -694,8 +694,8 @@ export default function App() {
     const varianceFactor = Math.max(0.65, 1 - (sessionNum - 2) * 0.12)
 
     return Array.from({ length: 15 }, () => {
-      const ev = Math.round(Math.max(72, Math.min(105, sessionEV + (Math.random() - 0.5) * 16 * varianceFactor)))
-      const la = Math.round(Math.max(-5, Math.min(45, sessionLA + (Math.random() - 0.5) * 20 * varianceFactor)))
+      const ev = Math.round(Math.max(72, Math.min(105, sessionEV + (Math.random() - 0.5) * 24 * varianceFactor)))
+      const la = Math.round(Math.max(-5, Math.min(45, sessionLA + (Math.random() - 0.5) * 28 * varianceFactor)))
       const dir = Math.round((Math.random() - 0.45) * 70 * varianceFactor)
       const dist = Math.round(ev * 4.0 + la * 1.8)
       const inZonePitch = Math.random() < 0.70
