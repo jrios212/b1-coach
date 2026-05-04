@@ -1319,9 +1319,10 @@ export default function DebriefScreen({
                           fontWeight: 700, fontSize: 11, letterSpacing: '0.08em',
                           textTransform: 'uppercase', color: ACCENT,
                           padding: '11px 14px 10px',
-                          textAlign: i === 0 ? 'center' : 'right',
+                          textAlign: 'center',
+                          ...(i === 5 ? { paddingRight: 16 } : {}),
                           borderBottom: '1.5px solid rgba(255,107,26,0.35)',
-                          ...(i === 0 ? { width: 56 } : {}),
+                          ...(i === 0 ? { width: 36 } : {}),
                         }}
                       >
                         {col}
@@ -1340,7 +1341,7 @@ export default function DebriefScreen({
                     const rowBg = i % 2 === 1 ? 'rgba(255,255,255,0.02)' : 'transparent'
                     const cellStyle = {
                       padding: '9px 14px',
-                      textAlign: 'right',
+                      textAlign: 'center',
                       fontFamily: "'Barlow Condensed', sans-serif",
                       fontSize: 16, fontWeight: 600,
                       color: 'rgba(255,255,255,0.75)',
@@ -1366,6 +1367,7 @@ export default function DebriefScreen({
                         <td style={{
                           ...cellStyle,
                           textAlign: 'center',
+                          paddingRight: 16,
                           color: inZoneRow ? ACCENT : 'rgba(255,255,255,0.35)',
                           fontWeight: inZoneRow ? 700 : 500,
                         }}>
