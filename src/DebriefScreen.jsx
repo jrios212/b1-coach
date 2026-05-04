@@ -299,18 +299,29 @@ function ChatPanel({ messages = [], onMessagesChange, delay, sessionContext, onC
           display: 'flex', alignItems: 'center', gap: 7,
           background: 'rgba(16,18,24,0.9)',
           border: '1.5px solid rgba(255,255,255,0.1)',
-          borderRadius: 11, padding: '0 8px 0 10px', height: 38,
+          borderRadius: 11, padding: '0 8px 0 10px', minHeight: 38, paddingBlock: 6,
         }}>
-          <input
+          <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
+            onChange={(e) => {
+              setText(e.target.value)
+              e.target.style.height = 'auto'
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                send()
+              }
+            }}
             placeholder="Ask your coach…"
+            rows={1}
             style={{
               flex: 1, background: 'transparent',
-              border: 'none', outline: 'none',
+              border: 'none', outline: 'none', resize: 'none',
               fontFamily: "'Barlow', sans-serif",
               fontSize: 14, color: 'rgba(255,255,255,0.85)',
+              lineHeight: 1.5, padding: 0, overflow: 'hidden',
             }}
           />
           <button
@@ -1067,7 +1078,7 @@ export default function DebriefScreen({
               fontFamily: "'Barlow', sans-serif",
               fontSize: 16, lineHeight: 1.6,
               color: 'rgba(255,255,255,0.78)',
-              overflowY: 'auto',
+              overflowY: 'visible',
             }}>
               {coachingSummary ?? (
                 <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
