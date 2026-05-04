@@ -645,10 +645,6 @@ function SprayDirection({ swings }) {
     )
   }
 
-  const distances = swings.map(s => s.hit.landing.distance)
-  const minDist = Math.min(...distances)
-  const maxDist = Math.max(...distances)
-
   return (
     <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
       <svg width="100%" height="100%" viewBox="0 0 300 222" preserveAspectRatio="xMidYMid meet">
@@ -667,14 +663,14 @@ function SprayDirection({ swings }) {
         <path d={arcPath(185)} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
 
         {/* Distance markers */}
-        <text x={infieldLabel.x}  y={infieldLabel.y  - 5} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Barlow, sans-serif">200ft</text>
-        <text x={outfieldLabel.x} y={outfieldLabel.y - 5} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Barlow, sans-serif">350ft+</text>
+        <text x={infieldLabel.x}  y={infieldLabel.y  - 5} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Barlow, sans-serif">300ft</text>
+        <text x={outfieldLabel.x} y={outfieldLabel.y - 5} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontFamily="Barlow, sans-serif">400ft+</text>
 
         {/* Swing shapes */}
         {swings.map((swing, i) => {
           const dir  = swing.hit.launch.direction
           const dist = swing.hit.landing.distance
-          const scale = maxDist === minDist ? 120 : 70 + ((dist - minDist) / (maxDist - minDist)) * 100
+          const scale = Math.max(40, Math.min(200, 120 + (dist - 300) * 0.65))
           const rad = (dir * Math.PI) / 180
           const x = cx + scale * Math.sin(rad)
           const y = cy - scale * Math.cos(rad)
