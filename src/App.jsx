@@ -638,24 +638,22 @@ const NICKNAMES = [
 
 export default function App() {
   const mockSwings = [
-    { plateLocHeight: 2.8, plateLocSide:  0.2, hit: { launch: { exitSpeed: 91, angle: 28, direction:   2 }, landing: { distance: 382 } } },
-    { plateLocHeight: 1.2, plateLocSide: -0.3, hit: { launch: { exitSpeed: 87, angle: 15, direction: -22 }, landing: { distance: 305 } } },
-    { plateLocHeight: 3.1, plateLocSide: -0.5, hit: { launch: { exitSpeed: 94, angle: 32, direction:   1 }, landing: { distance: 418 } } },
-    { plateLocHeight: 2.3, plateLocSide:  0.9, hit: { launch: { exitSpeed: 82, angle:  8, direction: -12 }, landing: { distance: 268 } } },
-    { plateLocHeight: 2.6, plateLocSide:  0.4, hit: { launch: { exitSpeed: 96, angle: 30, direction:   4 }, landing: { distance: 431 } } },
-    { plateLocHeight: 3.8, plateLocSide:  0.1, hit: { launch: { exitSpeed: 89, angle: 22, direction: -18 }, landing: { distance: 352 } } },
-    { plateLocHeight: 2.1, plateLocSide: -0.6, hit: { launch: { exitSpeed: 85, angle: 12, direction:   8 }, landing: { distance: 290 } } },
-    { plateLocHeight: 2.9, plateLocSide:  0.3, hit: { launch: { exitSpeed: 93, angle: 35, direction:   0 }, landing: { distance: 408 } } },
-    { plateLocHeight: 1.4, plateLocSide:  0.5, hit: { launch: { exitSpeed: 88, angle: 26, direction:  25 }, landing: { distance: 365 } } },
-    { plateLocHeight: 3.3, plateLocSide: -0.4, hit: { launch: { exitSpeed: 90, angle: 18, direction:   6 }, landing: { distance: 335 } } },
-    { plateLocHeight: 2.7, plateLocSide:  0.6, hit: { launch: { exitSpeed: 95, angle: 29, direction:  -2 }, landing: { distance: 425 } } },
-    { plateLocHeight: 0.8, plateLocSide: -0.2, hit: { launch: { exitSpeed: 83, angle:  5, direction:  15 }, landing: { distance: 255 } } },
-    { plateLocHeight: 2.4, plateLocSide: -0.3, hit: { launch: { exitSpeed: 92, angle: 31, direction: -28 }, landing: { distance: 395 } } },
-    { plateLocHeight: 3.6, plateLocSide:  0.8, hit: { launch: { exitSpeed: 86, angle: 20, direction:  20 }, landing: { distance: 320 } } },
-    { plateLocHeight: 2.5, plateLocSide:  0.1, hit: { launch: { exitSpeed: 98, angle: 27, direction:   1 }, landing: { distance: 445 } } },
+    { plateLocHeight: 2.8, plateLocSide:  0.2, hit: { launch: { exitSpeed: 78, angle: 12, direction:   2 }, landing: { distance: 334 } } },
+    { plateLocHeight: 1.2, plateLocSide: -0.3, hit: { launch: { exitSpeed: 72, angle:  8, direction: -18 }, landing: { distance: 303 } } },
+    { plateLocHeight: 3.1, plateLocSide: -0.5, hit: { launch: { exitSpeed: 88, angle: 26, direction:   1 }, landing: { distance: 399 } } },
+    { plateLocHeight: 2.3, plateLocSide:  0.9, hit: { launch: { exitSpeed: 75, angle:  6, direction: -10 }, landing: { distance: 311 } } },
+    { plateLocHeight: 2.6, plateLocSide:  0.4, hit: { launch: { exitSpeed: 91, angle: 28, direction:   3 }, landing: { distance: 414 } } },
+    { plateLocHeight: 3.8, plateLocSide:  0.1, hit: { launch: { exitSpeed: 82, angle: 18, direction: -15 }, landing: { distance: 361 } } },
+    { plateLocHeight: 2.1, plateLocSide: -0.6, hit: { launch: { exitSpeed: 76, angle: 10, direction:   6 }, landing: { distance: 322 } } },
+    { plateLocHeight: 2.9, plateLocSide:  0.3, hit: { launch: { exitSpeed: 85, angle: 24, direction:  -1 }, landing: { distance: 383 } } },
+    { plateLocHeight: 1.4, plateLocSide:  0.5, hit: { launch: { exitSpeed: 79, angle: 14, direction:  22 }, landing: { distance: 341 } } },
+    { plateLocHeight: 3.3, plateLocSide: -0.4, hit: { launch: { exitSpeed: 83, angle: 20, direction:   5 }, landing: { distance: 368 } } },
+    { plateLocHeight: 2.7, plateLocSide:  0.6, hit: { launch: { exitSpeed: 87, angle: 22, direction:  -3 }, landing: { distance: 388 } } },
+    { plateLocHeight: 0.8, plateLocSide: -0.2, hit: { launch: { exitSpeed: 70, angle:  4, direction:  12 }, landing: { distance: 287 } } },
+    { plateLocHeight: 2.4, plateLocSide: -0.3, hit: { launch: { exitSpeed: 86, angle: 25, direction: -24 }, landing: { distance: 383 } } },
+    { plateLocHeight: 3.6, plateLocSide:  0.8, hit: { launch: { exitSpeed: 80, angle: 16, direction:  18 }, landing: { distance: 352 } } },
+    { plateLocHeight: 2.5, plateLocSide:  0.1, hit: { launch: { exitSpeed: 92, angle: 27, direction:   1 }, landing: { distance: 416 } } },
   ]
-  const SESSION1_AVG_EV = 90
-  const SESSION1_AVG_LA = 23
 
   const [screen, setScreen] = useState('goal')
   const [selectedGoal, setSelectedGoal] = useState(null)
@@ -683,8 +681,8 @@ export default function App() {
   }
 
   const generateSwings = (prevSwings, sessionNum = 2) => {
-    const prevEV = SESSION1_AVG_EV
-    const prevLA = SESSION1_AVG_LA
+    const prevEV = mockSwings.reduce((s, w) => s + w.hit.launch.exitSpeed, 0) / mockSwings.length
+    const prevLA = mockSwings.reduce((s, w) => s + w.hit.launch.angle, 0) / mockSwings.length
 
     // 65/35 improvement bias on session average
     const improving = Math.random() < 0.65
@@ -693,11 +691,11 @@ export default function App() {
 
     // Variance shrinks naturally as sessions progress (more consistent with practice)
     // Session 2: ~87% of session 1 spread, Session 3: ~75%, Session 4: ~65%
-    const varianceFactor = Math.max(0.65, 1 - (sessionNum - 2) * 0.12)
+    const varianceFactor = Math.max(0.85, 1 - (sessionNum - 2) * 0.05)
 
     return Array.from({ length: 15 }, () => {
-      const ev = Math.round(Math.max(65, Math.min(105, sessionEV + (Math.random() - 0.5) * 24 * varianceFactor)))
-      const la = Math.round(Math.max(-5, Math.min(45, sessionLA + (Math.random() - 0.5) * 28 * varianceFactor)))
+      const ev = Math.round(Math.max(65, Math.min(97, sessionEV + (Math.random() - 0.5) * 16 * varianceFactor)))
+      const la = Math.round(Math.max(-5, Math.min(35, sessionLA + (Math.random() - 0.5) * 22 * varianceFactor)))
       const dir = Math.round((Math.random() - 0.45) * 70 * varianceFactor)
       const dist = Math.round(ev * 4.0 + la * 1.8)
       const inZonePitch = Math.random() < 0.70
