@@ -654,6 +654,8 @@ export default function App() {
     { plateLocHeight: 3.6, plateLocSide:  0.8, hit: { launch: { exitSpeed: 86, angle: 20, direction:  20 }, landing: { distance: 320 } } },
     { plateLocHeight: 2.5, plateLocSide:  0.1, hit: { launch: { exitSpeed: 98, angle: 27, direction:   1 }, landing: { distance: 445 } } },
   ]
+  const SESSION1_AVG_EV = 90
+  const SESSION1_AVG_LA = 23
 
   const [screen, setScreen] = useState('goal')
   const [selectedGoal, setSelectedGoal] = useState(null)
@@ -681,8 +683,8 @@ export default function App() {
   }
 
   const generateSwings = (prevSwings, sessionNum = 2) => {
-    const prevEV = prevSwings.reduce((s, w) => s + w.hit.launch.exitSpeed, 0) / prevSwings.length
-    const prevLA = prevSwings.reduce((s, w) => s + w.hit.launch.angle, 0) / prevSwings.length
+    const prevEV = SESSION1_AVG_EV
+    const prevLA = SESSION1_AVG_LA
 
     // 65/35 improvement bias on session average
     const improving = Math.random() < 0.65
