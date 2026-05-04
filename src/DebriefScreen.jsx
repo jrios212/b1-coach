@@ -147,10 +147,18 @@ function ChatPanel({ messages = [], onMessagesChange, delay, sessionContext, onC
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`
+    }
+  }, [])
 
   const send = () => {
     if (!text.trim() || loading) return
@@ -314,6 +322,7 @@ function ChatPanel({ messages = [], onMessagesChange, delay, sessionContext, onC
                 send()
               }
             }}
+            ref={textareaRef}
             placeholder="Ask your coach…"
             rows={1}
             style={{
@@ -709,41 +718,45 @@ function PitchLocation({ swings, goalId }) {
   }
 
   return (
-    <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="x" type="number" domain={[-1.5, 1.5]}
-            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
-            label={{ value: 'Side (ft)', position: 'insideBottom', offset: -15, style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }}
-          />
-          <YAxis dataKey="y" type="number" domain={[0.5, 4.5]}
-            tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
-            label={{ value: 'Height (ft)', angle: -90, position: 'insideLeft', offset: 15, style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }}
-          />
-          <ReferenceArea x1={-0.7} x2={0.7} y1={1.5} y2={3.5}
-            fill={ACCENT} fillOpacity={0.08}
-            stroke={ACCENT} strokeOpacity={0.4} strokeDasharray="4 4"
-            label={{ value: 'Strike Zone', position: 'insideTop', fontSize: 9, fill: ACCENT, opacity: 0.6 }}
-          />
-          <Tooltip
-            cursor={false}
-            contentStyle={{ background: 'rgba(14,15,20,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
-            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
-            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
-            formatter={(value, name) => {
-              if (name === 'x') return [`${Number(value).toFixed(2)} ft`, 'Side']
-              if (name === 'y') return [`${Number(value).toFixed(2)} ft`, 'Height']
-              return null
-            }}
-          />
-          <Scatter data={data} shape={renderShape} />
-        </ScatterChart>
-      </ResponsiveContainer>
+    <div style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+            <XAxis dataKey="x" type="number" domain={[dataMin => Math.min(dataMin - 0.15, -0.85), dataMax => Math.max(dataMax + 0.15, 0.85)]}
+              tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+              tickFormatter={(v) => v.toFixed(1)}
+              label={{ value: 'Side (ft)', position: 'insideBottom', offset: -15, style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }}
+            />
+            <YAxis dataKey="y" type="number" domain={[dataMin => Math.min(dataMin - 0.15, 1.35), dataMax => Math.max(dataMax + 0.15, 3.65)]}
+              tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'Barlow, sans-serif' }}
+              tickFormatter={(v) => v.toFixed(1)}
+              label={{ value: 'Height (ft)', angle: -90, position: 'insideLeft', offset: 15, style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" } }}
+            />
+            <ReferenceArea x1={-0.7} x2={0.7} y1={1.5} y2={3.5}
+              fill={ACCENT} fillOpacity={0.08}
+              stroke={ACCENT} strokeOpacity={0.4} strokeDasharray="4 4"
+              label={{ value: 'Strike Zone', position: 'insideTop', fontSize: 9, fill: ACCENT, opacity: 0.6 }}
+            />
+            <Tooltip
+              cursor={false}
+              contentStyle={{ background: 'rgba(14,15,20,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
+              labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
+              itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
+              formatter={(value, name) => {
+                if (name === 'x') return [`${Number(value).toFixed(2)} ft`, 'Side']
+                if (name === 'y') return [`${Number(value).toFixed(2)} ft`, 'Height']
+                return null
+              }}
+            />
+            <Scatter data={data} shape={renderShape} />
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
       {goalId === 'allfields' && (
         <div style={{
-          display: 'flex', justifyContent: 'center', gap: 16,
-          marginTop: 6,
+          flexShrink: 0, height: 24,
+          display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16,
         }}>
           {[
             { label: 'Pull',   color: ACCENT,                    shape: 'circle'   },
@@ -1073,42 +1086,40 @@ export default function DebriefScreen({
             delay={0.08}
             style={{ flex: 1 }}
           >
-            {/* coachingSummary */}
             <div className="debrief-scroll" style={{
-              fontFamily: "'Barlow', sans-serif",
-              fontSize: 16, lineHeight: 1.6,
-              color: 'rgba(255,255,255,0.78)',
-              overflowY: 'visible',
+              flex: 1, overflowY: 'auto', minHeight: 0,
+              display: 'flex', flexDirection: 'column',
             }}>
-              {coachingSummary ?? (
-                <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
-                  Session summary will appear here once generated by your coach.
-                </span>
-              )}
-            </div>
-
-            {/* What This Means secondary label */}
-            <div style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700, fontSize: 17, letterSpacing: '0.08em',
-              textTransform: 'uppercase', color: ACCENT,
-              marginTop: 10, marginBottom: 6, flexShrink: 0,
-            }}>
-              What This Means
-            </div>
-
-            {/* whatThisMeans text */}
-            <div style={{
-              fontFamily: "'Barlow', sans-serif",
-              fontSize: 16, lineHeight: 1.65,
-              color: 'rgba(255,255,255,0.78)',
-              flexShrink: 0,
-            }}>
-              {whatThisMeans ?? (
-                <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
-                  Coaching context will appear here once generated.
-                </span>
-              )}
+              <div style={{
+                fontFamily: "'Barlow', sans-serif",
+                fontSize: 16, lineHeight: 1.6,
+                color: 'rgba(255,255,255,0.78)',
+              }}>
+                {coachingSummary ?? (
+                  <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
+                    Session summary will appear here once generated by your coach.
+                  </span>
+                )}
+              </div>
+              <div style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 700, fontSize: 17, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: ACCENT,
+                marginTop: 10, marginBottom: 6,
+              }}>
+                What This Means
+              </div>
+              <div style={{
+                fontFamily: "'Barlow', sans-serif",
+                fontSize: 16, lineHeight: 1.65,
+                color: 'rgba(255,255,255,0.78)',
+              }}>
+                {whatThisMeans ?? (
+                  <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
+                    Coaching context will appear here once generated.
+                  </span>
+                )}
+              </div>
             </div>
           </Panel>
 
