@@ -1067,7 +1067,7 @@ export default function DebriefScreen({
               fontFamily: "'Barlow', sans-serif",
               fontSize: 16, lineHeight: 1.6,
               color: 'rgba(255,255,255,0.78)',
-              flex: 1, overflowY: 'auto', minHeight: 0,
+              overflowY: 'auto',
             }}>
               {coachingSummary ?? (
                 <span style={{ color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
@@ -1102,7 +1102,7 @@ export default function DebriefScreen({
           </Panel>
 
           {/* BOTTOM PANELS — chart placeholders */}
-          <div style={{ flexShrink: 0, display: 'flex', gap: GAP, height: 280 }}>
+          <div style={{ flexShrink: 0, display: 'flex', gap: GAP, height: 340 }}>
             {chartSlots.map((chart, i) => {
               const CHART_LABELS = {
                 scatter_ev_la:   'Launch Angle vs Exit Velocity',
