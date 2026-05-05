@@ -164,6 +164,7 @@ function ChatPanel({ messages = [], onMessagesChange, delay, sessionContext, onC
     if (!text.trim() || loading) return
     const msg = text.trim()
     setText('')
+    if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
     const updatedMessages = [...messages, { role: 'user', content: msg }]
     onMessagesChange?.(updatedMessages)
     setLoading(true)
@@ -357,10 +358,13 @@ function ChatPanel({ messages = [], onMessagesChange, delay, sessionContext, onC
 }
 
 // ── EV vs Launch Angle scatter chart ──────────────────────────────────────
-function ScatterEVLA({ swings }) {
-  const data = swings.map((swing) => ({
+function ScatterEVLA({ swings, goalId }) {
+  const bandMin = goalId === 'contact' ? 8 : goalId === 'popup' ? 10 : 25
+  const bandMax = goalId === 'contact' ? 18 : goalId === 'popup' ? 25 : 35
+  const data = swings.map((swing, i) => ({
     ev: swing.hit.launch.exitSpeed,
     la: swing.hit.launch.angle,
+    swing: i + 1,
   }))
 
   return (
@@ -368,7 +372,7 @@ function ScatterEVLA({ swings }) {
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart margin={{ top: 10, right: 20, bottom: 30, left: 0 }}>
           <ReferenceArea
-            y1={25} y2={35}
+            y1={bandMin} y2={bandMax}
             fill="#FF6B1A" fillOpacity={0.08}
             stroke="#FF6B1A" strokeOpacity={0.25}
           />
@@ -398,15 +402,15 @@ function ScatterEVLA({ swings }) {
               style: { fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'Barlow Condensed', sans-serif" },
             }}
           />
-          <ReferenceLine y={25} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
-          <ReferenceLine y={35} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
+          <ReferenceLine y={bandMin} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
+          <ReferenceLine y={bandMax} stroke="#FF6B1A" strokeOpacity={0.4} strokeDasharray="4 4" />
           <ReferenceLine x={88} stroke="#FF6B1A" strokeOpacity={0.35} strokeDasharray="4 4" />
           <Scatter data={data} name="Swings">
             {data.map((entry, i) => (
               <Cell
                 key={i}
-                fill={entry.ev >= 88 && entry.la >= 25 && entry.la <= 35 ? '#FF6B1A' : 'rgba(255,255,255,0.3)'}
-                fillOpacity={entry.ev >= 88 && entry.la >= 25 && entry.la <= 35 ? 0.9 : 0.5}
+                fill={entry.ev >= 88 && entry.la >= bandMin && entry.la <= bandMax ? '#FF6B1A' : 'rgba(255,255,255,0.3)'}
+                fillOpacity={entry.ev >= 88 && entry.la >= bandMin && entry.la <= bandMax ? 0.9 : 0.5}
               />
             ))}
           </Scatter>
@@ -422,6 +426,7 @@ function ScatterEVLA({ swings }) {
             labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
             itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
             formatter={(value, name) => {
+              if (name === 'swing') return [`Swing ${value}`, '']
               if (name === 'ev') return [`${value} mph`, 'Exit Velo']
               if (name === 'la') return [`${value}°`, 'Launch Angle']
               return [value, name]
@@ -693,13 +698,13 @@ function SprayDirection({ swings }) {
 
 // ── Pitch location scatter (Recharts) ────────────────────────────────────
 function PitchLocation({ swings, goalId }) {
-  const data = swings.map((sw) => {
+  const data = swings.map((sw, i) => {
     const { exitSpeed, angle } = sw.hit.launch
     let outcome = false
     if (goalId === 'power')   outcome = exitSpeed >= 88 && angle >= 25 && angle <= 35
     if (goalId === 'contact') outcome = angle >= 10 && angle <= 20 && exitSpeed >= 85
     if (goalId === 'popup')   outcome = angle >= 5 && angle <= 35
-    return { x: sw.plateLocSide, y: sw.plateLocHeight, exitSpeed, angle, direction: sw.hit.launch.direction, outcome }
+    return { x: sw.plateLocSide, y: sw.plateLocHeight, exitSpeed, angle, direction: sw.hit.launch.direction, outcome, swing: i + 1 }
   })
 
   const renderShape = ({ cx, cy, payload }) => {
@@ -744,6 +749,7 @@ function PitchLocation({ swings, goalId }) {
               labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
               itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
               formatter={(value, name) => {
+                if (name === 'swing') return [`Swing ${value}`, '']
                 if (name === 'x') return [`${Number(value).toFixed(2)} ft`, 'Side']
                 if (name === 'y') return [`${Number(value).toFixed(2)} ft`, 'Height']
                 return null
@@ -1145,7 +1151,7 @@ export default function DebriefScreen({
                   style={{ flex: 1 }}
                 >
                   {chart?.type === 'scatter_ev_la' ? (
-                    <ScatterEVLA swings={rawSwings} />
+                    <ScatterEVLA swings={rawSwings} goalId={goalId} />
                   ) : chart?.type === 'trend_ev' ? (
                     <TrendEV swings={rawSwings} />
                   ) : chart?.type === 'bar_distance' ? (
@@ -1228,7 +1234,7 @@ export default function DebriefScreen({
           {
             label: 'TOP EXIT VELO',
             value: topEV != null ? `${topEV} mph` : '—',
-            highlight: topEV != null && topEV >= 95,
+            highlight: topEV != null && topEV >= 88,
           },
         ].map((tile) => (
           <div
@@ -1358,7 +1364,7 @@ export default function DebriefScreen({
                         }}>
                           {String(i + 1).padStart(2, '0')}
                         </td>
-                        <td style={{ ...cellStyle, color: inZoneRow ? ACCENT : 'rgba(255,255,255,0.75)' }}>
+                        <td style={{ ...cellStyle, color: ev >= 88 ? ACCENT : 'rgba(255,255,255,0.75)' }}>
                           {ev} mph
                         </td>
                         <td style={cellStyle}>{la}°</td>
