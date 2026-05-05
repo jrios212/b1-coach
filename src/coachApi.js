@@ -16,7 +16,7 @@ Rules:
 
 For tipsIntro: Write one short sentence the way a coach would open after practice — warm but direct. Reference how the session went if it was notable. Example: "Good work out there — two things to focus on before next time." or "Tough day, but here's what we build on." One sentence only.
 
-For nextSessionTips: Write each tip the way a coach would say it out loud walking off the field, not as a written recommendation. Reference one specific number, then give one concrete thing to try. Three sentences per tip, no exceptions. First sentence is an observation referencing specific numbers from the data. (ex: You only hit to the opposite field on swings 9, 12, and 14, and two of those were your weakest swings at 83 and 86 mph.) Second sentence translates what that means in baseball terms. (ex: That tells me you are reaching for those instead of staying through the ball.) Third sentence is one specific physical cue — something the player can feel in their body or visualize mechanically. Bad: 'Focus on driving the ball the other way.' Good: 'Let the ball travel deeper, keep your hands inside, and extend through contact toward the opposite field gap.' A cue tells the player what to do with their body, not just what outcome to chase. (ex: Try letting the ball travel a little deeper and driving it the other way with some authority.) No fourth sentence under any circumstances.
+For nextSessionTips: Write each tip the way a coach would say it out loud walking off the field, not as a written recommendation. Reference one specific number, then give one concrete thing to try. Three sentences per tip, no exceptions. When the session data shows a clear positive pattern worth reinforcing, one of the two tips may celebrate what the player did well and explain the mechanical reason it worked, rather than always focusing on improvement. Only do this when the data genuinely supports it. First sentence is an observation referencing specific numbers from the data. (ex: You only hit to the opposite field on swings 9, 12, and 14, and two of those were your weakest swings at 83 and 86 mph.) Second sentence translates what that means in baseball terms. (ex: That tells me you are reaching for those instead of staying through the ball.) Third sentence is one specific physical cue — something the player can feel in their body or visualize mechanically. Bad: 'Focus on driving the ball the other way.' Good: 'Let the ball travel deeper, keep your hands inside, and extend through contact toward the opposite field gap.' A cue tells the player what to do with their body, not just what outcome to chase. (ex: Try letting the ball travel a little deeper and driving it the other way with some authority.) No fourth sentence under any circumstances.
 
 If multiple sessions are provided, compare the current session to prior sessions and call out specific improvements or regressions by number.
 
@@ -101,8 +101,13 @@ export async function generateDebrief({ goal, player, sessions, viewingSessionNu
 
   const userMessage = `Player: ${player.firstName}
 Goal: ${goal.label}
+${goal.id === 'power' ? 'Goal context: target launch angle 25-35 degrees, target exit velocity 88+ mph. These are the conditions for home run distance contact.' : ''}
+${goal.id === 'contact' ? 'Goal context: target launch angle 8-18 degrees for true line drives, target exit velocity 85+ mph for hard contact. Angles above 20 degrees are fly balls, not line drives.' : ''}
+${goal.id === 'allfields' ? 'Goal context: goal is meaningful contact to all three zones — at least 3 swings pull side (direction below -15 degrees), at least 3 swings opposite field (direction above +15 degrees), remainder center field. Exit velocity 82+ mph indicates hard contact that challenges fielders.' : ''}
+${goal.id === 'popup' ? 'Goal context: goal is to eliminate pop-ups (launch angles above 35 degrees) while avoiding weak grounders (launch angles below 5 degrees). Target launch angle is 10-25 degrees — enough loft to drive the ball into the outfield productively without ballooning. Staying consistently between 10-25 degrees is success.' : ''}
+${goal.id === 'open' ? 'Goal context: open session with no specific target metrics. Analyze the most interesting patterns in the data.' : ''}
 
-Note: All sessions shown here happened during the same practice day, one after another. Do not use words like "today" or "yesterday" when comparing sessions. Refer to sessions by number only, like "last session" or "Session 1."
+Note: All sessions shown here are consecutive rounds of batting practice in a single continuous practice period, like taking multiple rounds of BP in the same cage session. Do not use words like "today" or "yesterday" when comparing sessions. Refer to sessions by number only. Do not imply the current session is the final one unless it is explicitly Session 4.
 
 ${filteredSessions.map((s) => `Session ${s.sessionNumber}:
 - Avg Exit Velocity: ${s.stats.avgExitVelocity} mph
@@ -130,12 +135,19 @@ export async function sendChatMessage({ goal, player, sessions, viewingSessionNu
 
   const userMessage = `Player: ${player.firstName}
 Goal: ${goal.label}
+${goal.id === 'power' ? 'Goal context: target launch angle 25-35 degrees, target exit velocity 88+ mph. These are the conditions for home run distance contact.' : ''}
+${goal.id === 'contact' ? 'Goal context: target launch angle 8-18 degrees for true line drives, target exit velocity 85+ mph for hard contact. Angles above 20 degrees are fly balls, not line drives.' : ''}
+${goal.id === 'allfields' ? 'Goal context: goal is meaningful contact to all three zones — at least 3 swings pull side (direction below -15 degrees), at least 3 swings opposite field (direction above +15 degrees), remainder center field. Exit velocity 82+ mph indicates hard contact that challenges fielders.' : ''}
+${goal.id === 'popup' ? 'Goal context: goal is to eliminate pop-ups (launch angles above 35 degrees) while avoiding weak grounders (launch angles below 5 degrees). Target launch angle is 10-25 degrees — enough loft to drive the ball into the outfield productively without ballooning. Staying consistently between 10-25 degrees is success.' : ''}
+${goal.id === 'open' ? 'Goal context: open session with no specific target metrics. Analyze the most interesting patterns in the data.' : ''}
 
 ${filteredSessions.map((s) => `Session ${s.sessionNumber}:
 - Avg Exit Velocity: ${s.stats.avgExitVelocity} mph
 - Avg Launch Angle: ${s.stats.avgLaunchAngle} degrees
 - In Zone: ${s.stats.inZoneCount}/${s.stats.totalSwings} pitches landed in the strike zone (pitch location only — not related to launch angle or swing outcome)
 - Distance distribution: 160-220ft: ${s.swings.filter(sw => sw.hit.landing.distance >= 160 && sw.hit.landing.distance < 220).length} swings, 220-260ft: ${s.swings.filter(sw => sw.hit.landing.distance >= 220 && sw.hit.landing.distance < 260).length} swings, 260-300ft: ${s.swings.filter(sw => sw.hit.landing.distance >= 260 && sw.hit.landing.distance < 300).length} swings, 300-340ft: ${s.swings.filter(sw => sw.hit.landing.distance >= 300 && sw.hit.landing.distance < 340).length} swings, 340+ft: ${s.swings.filter(sw => sw.hit.landing.distance >= 340).length} swings
+${s.debrief?.coachingSummary ? `- Previously told player in session summary: ${s.debrief.coachingSummary}` : ''}
+${s.debrief?.whatThisMeans ? `- Previously told player in what this means: ${s.debrief.whatThisMeans}` : ''}
 - Individual swings: ${s.swings.map((sw, i) => `Swing ${i + 1}: ${sw.hit.launch.exitSpeed}mph EV, ${sw.hit.launch.angle}° LA, ${sw.hit.launch.direction}° direction, ${sw.hit.landing.distance}ft distance, pitch height ${sw.plateLocHeight}ft / pitch side ${sw.plateLocSide}ft`).join(' | ')}`
   ).join('\n\n')}
 
