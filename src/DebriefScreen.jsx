@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { sendChatMessage } from './coachApi'
 import {
   ScatterChart, Scatter, LineChart, Line, BarChart, Bar, LabelList,
@@ -283,7 +284,7 @@ function ChatPanel({ messages = [], onMessagesChange, delay, sessionContext, onC
                 fontFamily: "'Barlow', sans-serif", fontSize: 14, lineHeight: 1.5,
                 color: m.role === 'user' ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.9)',
               }}>
-                {m.content}
+                <ReactMarkdown components={{ p: ({ children }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p> }}>{m.content}</ReactMarkdown>
               </div>
             </div>
           )
