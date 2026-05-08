@@ -680,7 +680,7 @@ export default function App() {
     return { avgExitVelocity, avgLaunchAngle, inZoneCount, totalSwings: total }
   }
 
-  const generateSwings = (prevSwings, sessionNum = 2) => {
+  const generateSwings = (sessionNum = 2) => {
     const prevEV = mockSwings.reduce((s, w) => s + w.hit.launch.exitSpeed, 0) / mockSwings.length
     const prevLA = mockSwings.reduce((s, w) => s + w.hit.launch.angle, 0) / mockSwings.length
 
@@ -843,7 +843,6 @@ export default function App() {
             angle: s.hit.launch.angle,
             dist: s.hit.landing.distance,
           }))}
-          sessionComplete={true}
           onEndSession={handleEndSession}
           onHome={handleHome}
         />
@@ -924,7 +923,7 @@ export default function App() {
           sessionCapReached={sessionHistory.length >= SESSION_MEMORY_DEPTH}
           onNewSession={() => {
             if (sessionHistory.length >= SESSION_MEMORY_DEPTH) return
-            const newSwings = generateSwings(activeSwings, sessionNumber + 1)
+            const newSwings = generateSwings(sessionNumber + 1)
             const newNum = sessionNumber + 1
             setActiveSwings(newSwings)
             setSessionNumber(newNum)

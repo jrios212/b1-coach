@@ -270,7 +270,6 @@ function SwingTicker({ swings }) {
 //   goalId          — string key matching a goal, e.g. 'power'
 //   goalLabel       — display name, e.g. 'Power & Home Runs'
 //   swings          — array of { ev: number, la: number, dist?: number }
-//   sessionComplete — boolean; when true the summary CTA becomes active
 export default function LiveSessionScreen({
   player = null,
   sessionNumber = null,
