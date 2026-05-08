@@ -416,20 +416,17 @@ function ScatterEVLA({ swings, goalId }) {
           </Scatter>
           <Tooltip
             cursor={false}
-            contentStyle={{
-              background: 'rgba(20,22,28,0.95)',
-              border: '1px solid rgba(255,107,26,0.3)',
-              borderRadius: 8,
-              fontFamily: "'Barlow', sans-serif",
-              fontSize: 12,
-            }}
-            labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
-            itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
-            formatter={(value, name) => {
-              if (name === 'swing') return [`Swing ${value}`, '']
-              if (name === 'ev') return [`${value} mph`, 'Exit Velo']
-              if (name === 'la') return [`${value}°`, 'Launch Angle']
-              return [value, name]
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null
+              const d = payload[0]?.payload
+              if (!d) return null
+              return (
+                <div style={{ background: 'rgba(20,22,28,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, padding: '8px 12px', fontFamily: "'Barlow', sans-serif", fontSize: 12 }}>
+                  <div style={{ color: ACCENT, marginBottom: 4, fontWeight: 700 }}>Swing {d.swing}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.85)' }}>{d.ev} mph EV</div>
+                  <div style={{ color: 'rgba(255,255,255,0.85)' }}>{d.la}° LA</div>
+                </div>
+              )
             }}
           />
         </ScatterChart>
@@ -745,14 +742,17 @@ function PitchLocation({ swings, goalId }) {
             />
             <Tooltip
               cursor={false}
-              contentStyle={{ background: 'rgba(14,15,20,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}
-              labelStyle={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Barlow', sans-serif" }}
-              itemStyle={{ color: 'rgba(255,255,255,0.85)', fontFamily: "'Barlow', sans-serif" }}
-              formatter={(value, name) => {
-                if (name === 'swing') return [`Swing ${value}`, '']
-                if (name === 'x') return [`${Number(value).toFixed(2)} ft`, 'Side']
-                if (name === 'y') return [`${Number(value).toFixed(2)} ft`, 'Height']
-                return null
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null
+                const d = payload[0]?.payload
+                if (!d) return null
+                return (
+                  <div style={{ background: 'rgba(14,15,20,0.95)', border: '1px solid rgba(255,107,26,0.3)', borderRadius: 8, padding: '8px 12px', fontFamily: "'Barlow', sans-serif", fontSize: 12 }}>
+                    <div style={{ color: ACCENT, marginBottom: 4, fontWeight: 700 }}>Swing {d.swing}</div>
+                    <div style={{ color: 'rgba(255,255,255,0.85)' }}>{Number(d.x).toFixed(2)} ft Side</div>
+                    <div style={{ color: 'rgba(255,255,255,0.85)' }}>{Number(d.y).toFixed(2)} ft Height</div>
+                  </div>
+                )
               }}
             />
             <Scatter data={data} shape={renderShape} />
