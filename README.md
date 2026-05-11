@@ -22,3 +22,9 @@ The Anthropic API key is protected server-side via a Vercel serverless function.
 ## Status
 
 Proof-of-concept running on mock data structured to match the real TrackMan B1 API. Real API integration is a defined next step.
+
+## Documentation
+
+- [Proof of Concept](docs/proof-of-concept.md) — the product thesis, key decisions, findings, and next steps
+- [Product Decisions Log](docs/product-decisions-log.md) — a session-by-session record of how the product evolved
+
